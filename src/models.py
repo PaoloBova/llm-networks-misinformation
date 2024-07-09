@@ -60,8 +60,8 @@ class DebateManager:
 
     def exchange_information(self, agent1, agent2, parameters):
         construct_prompt_fn = parameters["prompt_functions"]["baseline_game"]
-        prompt1 = construct_prompt_fn(agent1, agent2, {})
-        prompt2 = construct_prompt_fn(agent2, agent1, {})
+        prompt1 = construct_prompt_fn(agent1, agent2, parameters)
+        prompt2 = construct_prompt_fn(agent2, agent1, parameters)
         
         chat_result_1 = agent1.initiate_chat(
             recipient=agent2, 
