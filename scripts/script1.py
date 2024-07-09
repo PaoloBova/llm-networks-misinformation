@@ -3,8 +3,10 @@ from dotenv import load_dotenv
 # from core import main
 import networkx
 
+from src.agent import Agent
+import src.core
+from src.models import DebateManager
 import src.prompts as prompts
-from src.core import main
 
 # Load API key as environment variable from .env file
 load_dotenv()
@@ -38,6 +40,8 @@ params = {"num_agents": NUM_AGENTS,
           "api_key": API_KEY,
           "prompt_functions": prompt_functions,
           "seed": seed,
+          "model_class": DebateManager,
+          "agent_class": Agent,
           "graph": graph}
 
-all_results = main(params)
+results = src.core.run_multiple_simulations(params)

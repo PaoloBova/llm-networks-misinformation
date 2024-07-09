@@ -1,53 +1,72 @@
-from src.agent import Agent
-from src.debate_manager import DebateManager
-import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
+import random
 
-def initialize_agents(num_agents, api_key, temperature):
-    # Initialize and return a list of Agent objects
-    return [Agent(agent_id=i+1, api_key=api_key, temperature=temperature)
+def set_random_seed(seed: int):
+    """
+    Set the random seed for reproducibility in simulations.
+
+    Parameters:
+    seed (int): The seed value to be used for the random number generators.
+    """
+    random.seed(seed)
+    np.random.seed(seed)
+    # If other libraries are used, their seeds should be set here as well.
+    # Note that Autogen only offers a seed cache which must be set
+    # each time a new API call to an LLM is made.
+
+def initialize_agents(params):
+    """Initialize and return a list of agents"""
+    names = ['num_agents', 'api_key', 'temperature']
+    num_agents, api_key, temperature = [params[k] for k in names]
+    agent_class = params['agent_class']
+    # TODO: Generalize the agent initialization process
+    return [agent_class(agent_id=i+1,
+                        api_key=api_key,
+                        temperature=temperature)
             for i in range(num_agents)]
 
+def run(model, parameters):
+    print(f"Starting simulation with {len(model.agents)} agents.")
+
+    for _ in range(model.num_rounds):
+        print(f"Round {model.tick} begins.")
+        model.step(parameters)
+        #TODO: Allow more flexibility in when to collect what.
+        model.collect_stats(parameters)
+        print(f"Round {model.tick} ends.")
+        print("-" * 50)
+
+    return model.agent_results, model.model_results
+    
 def run_simulation(params):
-    names = ['num_agents', 'correct_answer', 'num_rounds', 'api_key', 'temperature']
-    num_agents, correct_answer, num_rounds, api_key, temperature = [params[k] for k in names]
-    # Initialize agents and the debate manager, then start the debate rounds
-    agents = initialize_agents(num_agents, api_key, temperature)
-    debate_manager = DebateManager(agents, correct_answer, num_rounds)
-    correct_counts_over_time = debate_manager.run(params)
-    return correct_counts_over_time
+    """Initialize the agents and model, then run the model."""
+    model_class = params['model_class']
+    agents = initialize_agents(params)
+    model = model_class(agents, params)
+    agent_results, model_results = run(model, params)
+    return agent_results, model_results
 
 def run_multiple_simulations(params):
+    """Run multiple simulations and collect the results."""
     num_simulations = params['num_simulations']
-    # Run multiple simulations and collect the results
-    all_results = []
-    for _ in range(num_simulations):
-        result = run_simulation(params)
-        all_results.append(result)
-    return all_results
-
-def plot_simulation_results(all_results, params):
-    num_agents = params['num_agents']
-    # Plot the results of multiple simulations
-    rounds = np.arange(len(all_results[0]) + 1)
-    adjusted_results = [np.insert(result, 0, 1) for result in all_results]
+    agent_results_all = []
+    model_results_all = []
+    set_random_seed(params['seed'])
+    params['simulation_id'] = params.get('simulation_id', 0)
+    for i in range(num_simulations):
+        params['simulation_id'] += 1
+        agent_results, model_results = run_simulation(params)
+        # Add a column to identify the simulation number
+        for res in agent_results:
+            res['simulation'] = i + 1
+        for res in model_results:
+            res['simulation'] = i + 1
+        agent_results_all.extend(agent_results)
+        model_results_all.extend(model_results)
+    # Create DataFrames from the results
+    agent_df = pd.DataFrame(agent_results_all)
+    model_df = pd.DataFrame(model_results_all)
     
-    for result in adjusted_results:
-        plt.plot(rounds, np.array(result) / num_agents, marker='o', linestyle='-', color='lightcoral', alpha=0.5)
-    
-    mean_results = np.mean(adjusted_results, axis=0) / num_agents
-    plt.plot(rounds, mean_results, marker='o', linestyle='-', color='orangered', label='Mean Proportion')
-    
-    plt.title('Proportion of Agents with Correct Answer Over Rounds')
-    plt.xlabel('Round')
-    plt.ylabel('Proportion with Correct Answer')
-    plt.ylim(0, 1.1)
-    plt.xticks(rounds)
-    plt.legend()
-    plt.grid(True)
-    plt.show()
-
-def main(params):
-    all_results = run_multiple_simulations(params)
-    plot_simulation_results(all_results, params)
-    return all_results
+    # Return a dictionary of DataFrames
+    return {'agent': agent_df, 'model': model_df}
