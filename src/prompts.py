@@ -37,3 +37,28 @@ def baseline_game(sender: autogen.ConversableAgent,
     replacement_dict = map_placeholders_baseline_game(sender, recipient, context)
     prompt = generate_prompt_from_template(replacement_dict, prompt_template1)
     return {"role": role, "content": prompt}
+
+
+# Read prompt template from file
+with open("prompt_templates/prompt2.md", 'r') as file:
+    prompt_template2 = file.read()
+
+def map_placeholders_summary_game(sender: autogen.ConversableAgent,
+                                   recipient: autogen.ConversableAgent,
+                                   context: Dict) -> Dict:
+    """Specify how to map placeholder text to runtime values"""
+    return {"guess": sender.knowledge['guess'],
+            "reasoning": sender.knowledge['reasoning'],
+            "own_guess": recipient.knowledge['guess'],
+            "own_reasoning": recipient.knowledge['reasoning'],
+            "receiver_name": recipient.name,
+            "target_variable": context["target_variable"],
+            "json_format_string": """{"label": str, "explanation": str}"""}
+
+def summary_game(sender: autogen.ConversableAgent,
+                  recipient: autogen.ConversableAgent,
+                  context: Dict) -> Dict:
+    role = context.get("role", "system")
+    replacement_dict = map_placeholders_summary_game(sender, recipient, context)
+    prompt = generate_prompt_from_template(replacement_dict, prompt_template2)
+    return {"role": role, "content": prompt}
