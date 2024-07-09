@@ -6,6 +6,7 @@ import networkx
 from src.agent import Agent
 import src.core
 from src.models import DebateManager
+import src.plot_utils
 import src.prompts as prompts
 
 # Load API key as environment variable from .env file
@@ -45,3 +46,5 @@ params = {"num_agents": NUM_AGENTS,
           "graph": graph}
 
 results = src.core.run_multiple_simulations(params)
+
+plot1 = src.plot_utils.plot_simulation_results({**params, "results": results})
