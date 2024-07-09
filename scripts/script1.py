@@ -2,11 +2,6 @@ import os
 from dotenv import load_dotenv
 # from core import main
 import networkx
-import matplotlib.pyplot as plt
-
-from typing import Union, Dict
-import numpy as np
-import autogen
 
 import src.prompts as prompts
 from src.core import main
