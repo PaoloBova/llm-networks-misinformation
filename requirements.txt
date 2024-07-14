@@ -1,0 +1,8 @@
+autogen
+json
+matplotlib
+networkx
+numpy
+pandas
+plotly
+python-dotenv

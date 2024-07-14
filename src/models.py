@@ -1,4 +1,13 @@
 import random
+import src.utils as utils
+
+@utils.multi
+def build_model(_, params):
+    return params.get("model_name")
+
+@utils.method(build_model, "debate_manager")
+def build_model(agents, params):
+    return DebateManager(agents, params)
 
 class DebateManager:
     """This class manages the debate between agents.
@@ -68,8 +77,15 @@ class DebateManager:
             message= prompt1,
             max_turns=1,
         )
-        # TODO: We probably don't need two chats here since it is a two
-        # way conversation.
+
+        # TODO: As we want both agents to update their beliefs based on their
+        # conversation, I think it is useful to create a second chat that uses
+        # the chat history of the first, and simply asks the second agent to
+        # reflect on the conversation and update their belief. In fact, we could
+        # separate the conversation and the belief update steps for both agents.
+        # This generalizes nicely enough to larger groups of agents too in
+        # group chats.
+        
         chat_result_2 = agent2.initiate_chat(
             recipient=agent1, 
             message= prompt2,
