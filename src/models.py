@@ -22,6 +22,7 @@ class DebateManager:
     def __init__(self, agents, params):
         names = ['correct_answer', 'num_rounds', 'seed']
         correct_answer, num_rounds, seed = [params[k] for k in names]
+        self.simulation_id = params.get('simulation_id', 0)
         self.agents = agents
         self.num_rounds = num_rounds
         self.correct_answer = int(correct_answer)  # Ensure correct_answer is an integer
