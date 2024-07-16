@@ -45,7 +45,7 @@ def run_simulation(params):
     agents = initialize_agents(params)
     model = model_class(agents, params)
     agent_results, model_results = run(model, params)
-    return agent_results, model_results
+    return model, agent_results, model_results
 
 def run_multiple_simulations(params):
     """Run multiple simulations and collect the results."""
@@ -56,7 +56,7 @@ def run_multiple_simulations(params):
     params['simulation_id'] = params.get('simulation_id', 0)
     for i in range(num_simulations):
         params['simulation_id'] += 1
-        agent_results, model_results = run_simulation(params)
+        model, agent_results, model_results = run_simulation(params)
         # Add a column to identify the simulation number
         for res in agent_results:
             res['simulation'] = i + 1
