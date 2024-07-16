@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import plotly.graph_objects as go
 import plotly.io as pio
+import pprint
 import random
 import subprocess
 import uuid
@@ -42,6 +43,21 @@ def get_current_git_commit():
     except subprocess.CalledProcessError:
         commit = "git command failed, are you in a git repository?"
     return commit
+
+def display_chat_messages(filepath):
+    # Load the chat histories from the JSON file
+    with open(filepath, 'r') as f:
+        chat_histories = json.load(f)
+
+    # Iterate over the chat histories
+    for chat_history in chat_histories:
+        # Print the chat id
+        for chat_id, chats in chat_history.items():
+            print(f'## Chat ID: {chat_id}\n')
+            # Iterate over the chats in the chat history
+            for chat in chats:
+                # Pretty print the chat
+                pprint.pprint(chat)
 
 def save_name(params,
               hash_filename=False,
