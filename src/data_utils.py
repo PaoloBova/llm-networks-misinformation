@@ -134,8 +134,9 @@ def save_data(data, data_dir=None):
         # If the value is a DataFrame, save it as a CSV file
         if isinstance(value, pd.DataFrame):
             value.to_csv(os.path.join(data_dir, f'{key}.csv'), index=False)
-        # If the value is a dictionary, save it as a JSON file
-        elif isinstance(value, dict):
+        # If the value is a dictionary or list of dictionaries, save it as a
+        # JSON file
+        elif isinstance(value, (dict, list)):
             with open(os.path.join(data_dir, f'{key}.json'), 'w') as f:
                 json.dump(value, f)
 
