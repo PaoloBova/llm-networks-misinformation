@@ -10,6 +10,7 @@ class Agent(autogen.ConversableAgent):
                                      "temperature": temperature})
         self.knowledge = knowledge or {"guess": random.randint(1, 100),
                                        "reasoning": "Initial random guess."}
+        self.knowledge_format = """{"guess": int, "reasoning": str}"""
 
     def update_knowledge(self, new_knowledge):
         self.knowledge = new_knowledge

@@ -12,7 +12,7 @@ def test_prompt_fn_example():
     knowledge2 = {"guess": "42", "reasoning": "I have direct information that this is the correct answer."}
     sender = Agent(1, "apikey", 0, model="gpt-3.5-turbo", knowledge=knowledge1)
     recipient = Agent(2, "apikey", 0, model="gpt-3.5-turbo", knowledge=knowledge2)
-    prompt_expected1 = """You've received information that the number might be 42 because 'I have direct information that this is the correct answer.'. Recall that you currently believe 42 because of the following reason: "I have direct information that this is the correct answer.". Consider whether you should update your beliefs. Give your new guess and reasoning in json format even if your answer is unchanged: {"label": str, "explanation": str}"""
+    prompt_expected1 = """You've received information that the number might be 42 because 'I have direct information that this is the correct answer.'. Recall that you currently believe 42 because of the following reason: "I have direct information that this is the correct answer.". Consider whether you should update your beliefs. Give your new guess and reasoning in json format even if your answer is unchanged: {"guess": int, "reasoning": str}"""
 
     # Act
     prompt_result1 = prompt_fn_example(sender, recipient, {})['content']
@@ -26,7 +26,7 @@ def test_prompt_fn1():
     knowledge2 = {"guess": "42", "reasoning": "I have direct information that this is the correct answer."}
     sender = Agent(1, "apikey", 0, model="gpt-3.5-turbo", knowledge=knowledge1)
     recipient = Agent(2, "apikey", 0, model="gpt-3.5-turbo", knowledge=knowledge2)
-    prompt_expected1 = """You've received information that the number might be 42 because 'I have direct information that this is the correct answer.'. Recall that you currently believe 42 because of the following reason: "I have direct information that this is the correct answer.". Consider whether you should update your beliefs. Give your new guess and reasoning in json format even if your answer is unchanged: {"label": str, "explanation": str}"""
+    prompt_expected1 = """You've received information that the number might be 42 because 'I have direct information that this is the correct answer.'. Recall that you currently believe 42 because of the following reason: "I have direct information that this is the correct answer.". Consider whether you should update your beliefs. Give your new guess and reasoning in json format even if your answer is unchanged: {"guess": int, "reasoning": str}"""
 
     # Act
     prompt_result2 = baseline_game(sender, recipient, {})['content']
