@@ -1,7 +1,8 @@
-pyautogen
 matplotlib
 networkx
 numpy
 pandas
 plotly
+pyautogen
 python-dotenv
+regex
