@@ -1,5 +1,6 @@
 import random
 import src.utils as utils
+import src.data_utils as data_utils
 
 @utils.multi
 def build_model(_, params):
@@ -82,4 +83,12 @@ class DebateManager:
             max_turns=1,
         )
         
-        agent1.make_decision(chat_result.chat_history[-1]["content"])
+        # Extract data from the chat message and update the agent's knowledge.
+        data_format = parameters.get("data_format", {"guess": str, "reasoning": str})
+        message = chat_result.chat_history[-1]["content"]
+        data = data_utils.extract_data(message, data_format)
+        if len(data) >= 1:
+            agent1.update_knowledge(data[0])
+            print(f"Agent {agent1.name} updated knowledge to: {agent1.knowledge}")
+        else:
+            print(f"Agent {agent1.name} keeps its guess and reasoning unchanged: {agent1.knowledge}.")
