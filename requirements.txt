@@ -1,5 +1,4 @@
-autogen
-json
+pyautogen
 matplotlib
 networkx
 numpy
