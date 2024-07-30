@@ -77,8 +77,8 @@ class DebateManager:
         # Agent 1 chats to agent 2 to learn what agent 2 is thinking.
         # Only agent 1 updates their knowledge based on the conversation.
         # This ensures everyone updates their knowledge once per round.
-        chat_result = agent1.initiate_chat(
-            recipient=agent2, 
+        chat_result = agent2.initiate_chat(
+            recipient=agent1, 
             message= prompt,
             max_turns=1,
         )
