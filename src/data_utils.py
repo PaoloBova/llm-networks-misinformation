@@ -19,6 +19,21 @@ def generate_random_phrase(words, num_words=3):
     return '_'.join(random.sample(words, num_words))
 
 def create_id(path_to_data='/usr/share/dict/words', verbose=True):
+    """Create a unique identifier based on a random phrase and a UUID.
+    
+    Parameters:
+    - path_to_data: The path to a file containing a list of words.
+    - verbose: Whether to print the random phrase and sim ID.
+    
+    Returns:
+    - A unique identifier string.
+    
+    Note:
+    - If the file at `path_to_data` does not exist, a UUID will be used instead.
+    - You may wish to find a list of words to use as the dictionary file. On
+    Unix systems, you can use `/usr/share/dict/words`. See the following link
+    for more options: https://stackoverflow.com/questions/18834636/random-word-generator-python
+    """
     try:
         with open(path_to_data, 'r') as f:
             words = [line.strip() for line in f if is_plain_word(line.strip())]
