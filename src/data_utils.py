@@ -8,7 +8,9 @@ import plotly.graph_objects as go
 import plotly.io as pio
 import pprint
 import random
+import regex
 import subprocess
+from typing import Any, Dict, List
 import uuid
 
 
@@ -207,3 +209,43 @@ def save_plots(plots, plots_dir=None):
             filepath = os.path.join(plots_dir, f'{filename_stub}.html')
             pio.write_html(plot, filepath)
             print(f"Saved file: {filepath}")
+
+def extract_data(message: str, data_format: Dict[str, type]) -> List[Dict[str, Any]]:
+    """Extracts data from a message according to a specified format.
+
+    Args:
+        message (str): The message to extract data from.
+        data_format (Dict[str, type]): A dictionary specifying the expected keys and their corresponding types in the data.
+
+    Returns:
+        List[Dict[str, Any]]: A list of dictionaries containing the extracted data. Each dictionary has keys and values corresponding to the data_format argument.
+    """
+    # Use a regular expression to extract all JSON strings from the message.
+    matches = regex.findall(r'\{(?:[^{}]|(?R))*\}', message)
+    data = []
+    for match in matches:
+        # Parse the JSON string into a dictionary.
+        try:
+            new_data = json.loads(match)
+        except json.JSONDecodeError:
+            print("Could not parse a JSON string.")
+            continue
+
+        # Validate the keys in the dictionary.
+        expected_keys = set(data_format.keys())
+        if set(new_data.keys()) != expected_keys:
+            print("Received unexpected keys.")
+            continue
+
+        # Validate the types of the values in the dictionary.
+        valid_data = True
+        for key, expected_type in data_format.items():
+            if not isinstance(new_data[key], expected_type):
+                print(f"Received data with incorrect type for key '{key}'.")
+                valid_data = False
+                break
+
+        if valid_data:
+            data.append(new_data)
+
+    return data
