@@ -58,7 +58,8 @@ class DebateManager:
     def step(self, parameters):
         self.tick += 1
         shuffled_agents = random.sample(self.agents, len(self.agents))
-        for i in range(0, len(shuffled_agents), 2):
+        # Loop through agents in random order
+        for i in range(len(shuffled_agents)):
             self.agent_step(shuffled_agents[i], parameters)
 
     def agent_step(self, agent, parameters):
@@ -70,29 +71,15 @@ class DebateManager:
 
     def exchange_information(self, agent1, agent2, parameters):
         construct_prompt_fn = parameters["prompt_functions"]["baseline_game"]
-        prompt1 = construct_prompt_fn(agent1, agent2, parameters)
-        prompt2 = construct_prompt_fn(agent2, agent1, parameters)
+        prompt = construct_prompt_fn(agent1, agent2, parameters)
         
-        chat_result_1 = agent1.initiate_chat(
+        # Agent 1 chats to agent 2 to learn what agent 2 is thinking.
+        # Only agent 1 updates their knowledge based on the conversation.
+        # This ensures everyone updates their knowledge once per round.
+        chat_result = agent1.initiate_chat(
             recipient=agent2, 
-            message= prompt1,
+            message= prompt,
             max_turns=1,
         )
-
-        # TODO: As we want both agents to update their beliefs based on their
-        # conversation, I think it is useful to create a second chat that uses
-        # the chat history of the first, and simply asks the second agent to
-        # reflect on the conversation and update their belief. In fact, we could
-        # separate the conversation and the belief update steps for both agents.
-        # This generalizes nicely enough to larger groups of agents too in
-        # group chats.
         
-        chat_result_2 = agent2.initiate_chat(
-            recipient=agent1, 
-            message= prompt2,
-            max_turns=1,
-        )
-        # Split chat result between agent 1 and 2
-        agent1.make_decision(chat_result_1.chat_history[-1]["content"])
-        agent2.make_decision(chat_result_2.chat_history[-1]["content"])
-    
+        agent1.make_decision(chat_result.chat_history[-1]["content"])
