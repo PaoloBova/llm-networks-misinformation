@@ -1,6 +1,5 @@
 import os
 from dotenv import load_dotenv
-# from core import main
 import networkx
 
 from src.agent import Agent
@@ -31,6 +30,7 @@ graph = networkx.watts_strogatz_graph(NUM_AGENTS, k, beta, seed=network_seed)
 
 # Uncomment to draw the graph before running the simulation.
 # The plot must be closed before the simulation can run. 
+# import matplotlib.pyplot as plt
 # networkx.draw(graph, with_labels=True)
 # plt.show()
 
