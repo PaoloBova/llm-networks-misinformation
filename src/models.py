@@ -45,15 +45,15 @@ class DebateManager:
                     'reasoning': agent.knowledge['reasoning']
                 })
 
-            correct_count = sum(agent.knowledge['guess'] == self.correct_answer
-                                for agent in self.agents)
-            self.model_results.append({
-                        'simulation_id': parameters.get('simulation_id', 0),
-                        'round':  self.tick,
-                        'correct_count': correct_count,
-                        'correct_proportion': correct_count / len(self.agents)
-                    })
-            print(f"Correct answers: {correct_count}/{len(self.agents)}.")
+        correct_count = sum(agent.knowledge['guess'] == self.correct_answer
+                            for agent in self.agents)
+        self.model_results.append({
+                    'simulation_id': parameters.get('simulation_id', 0),
+                    'round':  self.tick,
+                    'correct_count': correct_count,
+                    'correct_proportion': correct_count / len(self.agents)
+                })
+        print(f"Correct answers: {correct_count}/{len(self.agents)}.")
             
     def step(self, parameters):
         self.tick += 1
