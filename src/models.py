@@ -84,7 +84,7 @@ class DebateManager:
         )
         
         # Extract data from the chat message and update the agent's knowledge.
-        data_format = parameters.get("data_format", {"guess": str, "reasoning": str})
+        data_format = parameters.get("data_format", {"guess": int, "reasoning": str})
         message = chat_result.chat_history[-1]["content"]
         data = data_utils.extract_data(message, data_format)
         if len(data) >= 1:
