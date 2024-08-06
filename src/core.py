@@ -31,7 +31,8 @@ def initialize_agents(params):
 
 def run(model, parameters):
     print(f"Starting simulation with {len(model.agents)} agents.")
-
+    
+    model.collect_stats(parameters)
     for _ in range(model.num_rounds):
         print(f"Round {model.tick} begins.")
         model.step(parameters)
