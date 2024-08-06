@@ -35,9 +35,12 @@ graph = networkx.watts_strogatz_graph(NUM_AGENTS, k, beta, seed=network_seed)
 # plt.show()
 
 prompt_functions = {"baseline_game": prompts.summary_game}
+initial_reasoning = "You have direct information from the authorities that this is the correct answer, verified by the majority of experts. Experts also say that relying on guesses by others is very likely to lead to the wrong answer."
+
 
 params = {"num_agents": NUM_AGENTS,
           "correct_answer": CORRECT_ANSWER,
+          "initial_reasoning": initial_reasoning,
           "target_variable": "community_funding",
           "num_rounds": NUM_ROUNDS,
           "num_simulations": NUM_SIMULATIONS,
