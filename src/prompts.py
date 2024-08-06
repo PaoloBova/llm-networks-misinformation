@@ -60,11 +60,12 @@ def map_placeholders_summary_game(sender: autogen.ConversableAgent,
                                    recipient: autogen.ConversableAgent,
                                    context: Dict) -> Dict:
     """Specify how to map placeholder text to runtime values"""
-    return {"guess": sender.knowledge['guess'],
-            "reasoning": sender.knowledge['reasoning'],
+    return {"peer_guess": sender.knowledge['guess'],
+            "peer_reasoning": sender.knowledge['reasoning'],
+            "peer_name": sender.name,
             "own_guess": recipient.knowledge['guess'],
             "own_reasoning": recipient.knowledge['reasoning'],
-            "receiver_name": recipient.name,
+            "own_name": recipient.name,
             "target_variable": context["target_variable"],
             "json_format_string": sender.knowledge_format}
 

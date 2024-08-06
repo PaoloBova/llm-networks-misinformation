@@ -1,4 +1,4 @@
-{receiver_name} informs you that they believe {target_variable} is {guess} because: “{reasoning}”.
+{peer_name} informs you that they believe {target_variable} is {peer_guess} because: “{peer_reasoning}”.
 
 Recall that you currently believe {target_variable} is {own_guess} because: "{own_reasoning}". 
 
