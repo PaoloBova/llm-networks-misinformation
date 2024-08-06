@@ -4,18 +4,6 @@ from src.agent import Agent
 from src.prompt_utils import generate_prompt_from_template
 import src.utils as utils
 
-@utils.multi
-def build_prompt(_sender, _recipient, context):
-    return context.get("prompt_name")
-
-@utils.method(build_prompt, "baseline_game")
-def build_prompt(sender, recipient, context):
-    return baseline_game(sender, recipient, context)
-
-@utils.method(build_prompt, "summary_game")
-def build_prompt(sender, recipient, context):
-    return summary_game(sender, recipient, context)
-
 def prompt_fn_example(sender: autogen.ConversableAgent,
                       recipient: autogen.ConversableAgent,
                       context: Dict) -> Dict:

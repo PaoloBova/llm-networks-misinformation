@@ -2,14 +2,6 @@ import random
 import src.utils as utils
 import src.data_utils as data_utils
 
-@utils.multi
-def build_model(_, params):
-    return params.get("model_name")
-
-@utils.method(build_model, "debate_manager")
-def build_model(agents, params):
-    return DebateManager(agents, params)
-
 class DebateManager:
     """This class manages the debate between agents.
     
