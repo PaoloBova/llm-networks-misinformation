@@ -1,4 +1,9 @@
 
+import collections.abc
+
+def dict_values_are_scalar(dictionary):
+    return all(not isinstance(v, collections.abc.Iterable)
+               or isinstance(v, str) for v in dictionary.values())
 
 # **Disclaimer:** Unlike the code above, this code is not my invention. All credit
 # goes to Adam Bard for coming up with this (and Guido for writing an earlier
