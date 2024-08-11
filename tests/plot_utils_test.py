@@ -7,7 +7,7 @@ def test_plot_matric_against_var():
     
     # Create a DataFrame with fake data
     model_df = pd.DataFrame({
-        'simulation': np.repeat(np.arange(10), 100),  # 10 simulations
+        'simulation_run': np.repeat(np.arange(10), 100),  # 10 simulations
         'round': np.tile(np.arange(100), 10),  # 100 rounds per simulation
         'correct_count': np.random.rand(1000)  # Random data for correct_count
     })
@@ -15,8 +15,8 @@ def test_plot_matric_against_var():
     # Decide other arguments
     y_var = 'correct_count'
 
-    # Group by simulation and round to calculate the mean result for each round
-    grouped = model_df.groupby(['simulation', 'round'])[y_var].mean().reset_index()
+    # Group by simulation_run and round to calculate the mean result for each round
+    grouped = model_df.groupby(['simulation_run', 'round'])[y_var].mean().reset_index()
 
     # Calculate the mean result for each round across all simulations
     mean_results = grouped.groupby('round')[y_var].mean()
@@ -29,7 +29,7 @@ def test_plot_matric_against_var():
     plot_metric_against_var(data={'results': grouped},
                             metric=y_var,
                             var='round',
-                            group_var='simulation',
+                            group_var='simulation_run',
                             data_key='results',
                             plot_type='line',
                             marker='o',

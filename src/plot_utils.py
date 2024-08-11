@@ -9,22 +9,22 @@ def plot_simulation_results(params):
     
     y_var = 'correct_count'
     
-    # Group by simulation and round to calculate the mean result for each round
-    grouped = model_df.groupby(['simulation', 'round'])[y_var].mean().reset_index()
+    # Group by simulation_run and round to calculate the mean result for each round
+    grouped = model_df.groupby(['simulation_run', 'round'])[y_var].mean().reset_index()
     
-    # Get the unique simulation ids
-    simulation_ids = grouped['simulation'].unique()
+    # Get the unique simulation_run ids
+    simulation_ids = grouped['simulation_run'].unique()
     
-    # Plot the results for each simulation
+    # Plot the results for each simulation_run
     for simulation_id in simulation_ids:
-        simulation_data = grouped[grouped['simulation'] == simulation_id]
+        simulation_data = grouped[grouped['simulation_run'] == simulation_id]
         ax.plot(simulation_data['round'],
                 simulation_data[y_var]  / num_agents,
                 marker='o',
                 linestyle='-',
                 color='lightcoral',
                 alpha=0.5,
-                label=f'Simulation {simulation_id}')
+                label=f'simulation_run {simulation_id}')
     
     # Calculate and plot the mean result for each round across all simulations
     mean_results = grouped.groupby('round')[y_var].mean()

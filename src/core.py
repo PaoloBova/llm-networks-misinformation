@@ -91,9 +91,9 @@ def run_multiple_simulations(params):
         model, agent_results, model_results = run_simulation(params)
         # Add a column to identify the simulation number
         for res in agent_results:
-            res['simulation'] = i + 1
+            res['simulation_run'] = i + 1
         for res in model_results:
-            res['simulation'] = i + 1
+            res['simulation_run'] = i + 1
         agent_results_all.extend(agent_results)
         model_results_all.extend(model_results)
         
