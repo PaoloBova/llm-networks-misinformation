@@ -13,8 +13,8 @@ class DebateManager:
     See Agents.jl for a similar API for defining models."""
     
     def __init__(self, agents, params):
-        names = ['correct_answer', 'num_rounds', 'seed']
-        correct_answer, num_rounds, seed = [params[k] for k in names]
+        names = ['correct_answer', 'num_rounds']
+        correct_answer, num_rounds = [params[k] for k in names]
         self.simulation_id = params.get('simulation_id', 0)
         self.agents = agents
         self.num_rounds = num_rounds
