@@ -1,9 +1,20 @@
 
 import collections.abc
+import itertools
 
 def dict_values_are_scalar(dictionary):
     return all(not isinstance(v, collections.abc.Iterable)
                or isinstance(v, str) for v in dictionary.values())
+
+def dict_list(params):
+    """Convert a dictionary of lists into a list of dictionaries. See DrWatson.jl
+    for a similar function in Julia.
+    
+    See: https://juliadynamics.github.io/DrWatson.jl/dev/run&list/#DrWatson.dict_list
+    """
+    keys = params.keys()
+    values = [v if isinstance(v, list) else [v] for v in params.values()]
+    return [dict(zip(keys, v)) for v in itertools.product(*values)]
 
 # **Disclaimer:** Unlike the code above, this code is not my invention. All credit
 # goes to Adam Bard for coming up with this (and Guido for writing an earlier

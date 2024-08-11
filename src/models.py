@@ -1,6 +1,6 @@
 import random
-import src.utils as utils
 import src.data_utils as data_utils
+import src.networks as networks
 
 class DebateManager:
     """This class manages the debate between agents.
@@ -15,7 +15,7 @@ class DebateManager:
     def __init__(self, agents, params):
         names = ['correct_answer', 'num_rounds']
         correct_answer, num_rounds = [params[k] for k in names]
-        self.simulation_id = params.get('simulation_id', 0)
+        self.simulation_id = params.get('simulation_id', "no_sim_id")
         self.agents = agents
         self.num_rounds = num_rounds
         self.correct_answer = int(correct_answer)  # Ensure correct_answer is an integer
@@ -28,6 +28,7 @@ class DebateManager:
         self.source_node_id = correct_agent.agent_id
         correct_agent.update_knowledge({"guess": self.correct_answer,
                                         "reasoning": self.initial_reasoning})
+        self.graph = networks.init_graph(params)
     
     def collect_stats(self, parameters):
         for agent in self.agents:
@@ -67,7 +68,7 @@ class DebateManager:
             self.apply_information_shock(parameters)
 
     def agent_step(self, agent, parameters):
-        graph = parameters["graph"]
+        graph = self.graph
         neighbour_ids = list(graph.neighbors(agent.name - 1))
         # Determine who the selected agent interacts with.
         neighbour_id = random.choice(neighbour_ids)

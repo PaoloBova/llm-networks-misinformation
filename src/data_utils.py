@@ -3,6 +3,7 @@ import hashlib
 import json
 import os
 import matplotlib.pyplot as plt
+import networkx
 import pandas as pd
 import plotly.graph_objects as go
 import plotly.io as pio
@@ -145,6 +146,14 @@ def save_name(params,
     
     return filename_stub
 
+def serialize_graphs(graphs):
+    """Serialize a dictionary of NetworkX graphs to a JSON-serializable format."""
+    serialized_graphs = {}
+    for key, graph in graphs.items():
+        serialized_graph = networkx.node_link_data(graph)
+        serialized_graphs[key] = serialized_graph
+    return serialized_graphs
+
 def save_data(data, data_dir=None):
     """
     Save each dataframe in `data` to the given folder. 
@@ -167,6 +176,12 @@ def save_data(data, data_dir=None):
         # If the value is a DataFrame, save it as a CSV file
         if isinstance(value, pd.DataFrame):
             value.to_csv(os.path.join(data_dir, f'{key}.csv'), index=False)
+        # If the value is a dictionary of networkx graphs, save it as a JSON file
+        elif isinstance(value, dict) and all(isinstance(graph, networkx.Graph)
+                                             for graph in value.values()):
+            serialized_graphs = serialize_graphs(value)
+            with open(os.path.join(data_dir, f'{key}.json'), 'w') as f:
+                json.dump(serialized_graphs, f)
         # If the value is a dictionary or list of dictionaries, save it as a
         # JSON file
         elif isinstance(value, (dict, list)):

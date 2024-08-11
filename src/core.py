@@ -2,8 +2,9 @@ import autogen
 import collections
 import numpy as np
 import pandas as pd
-import pprint
 import random
+import src.utils as utils
+import src.data_utils as data_utils
 
 def set_random_seed(seed: int):
     """
@@ -78,37 +79,57 @@ def get_autogen_usage_summary(model):
     return usage_summary
 
 def run_multiple_simulations(params):
-    """Run multiple simulations and collect the results."""
-    num_simulations = params['num_simulations']
+    """Run multiple simulations and collect the results.
+    
+    See Agents.jl `Agents.paramscan` method for a similar API.
+    """
+    # If params is a dictionary, convert it into a list of dictionaries
+    params_list = utils.dict_list(params) if isinstance(params, dict) else params
+    # Assert that params is a list of dictionaries
+    assert all(isinstance(params, dict) for params in params_list)
+
     agent_results_all = []
     model_results_all = []
     chat_results_all = []
     usage_summaries_all = []
-    set_random_seed(params['seed'])
-    params['simulation_id'] = params.get('simulation_id', 0)
-    for i in range(num_simulations):
-        params['simulation_id'] += 1
+    graphs = {}
+    # All params in params_list should have the same `simulation_id`
+    # Only their `simulation_run` and `simulation_run_id` should differ
+    assert params_list[0].get('simulation_id') is not None
+    assert all(params['simulation_id'] == params_list[0]['simulation_id']
+               for params in params_list)
+    # We need to create the random ids for each simulation run before
+    # we set the random seeds for the simulation runs.
+    simulation_run_ids = [data_utils.create_id()
+                          for _ in range(len(params_list))]
+    for i, params in enumerate(params_list):
+        set_random_seed(params['seed'])
         model, agent_results, model_results = run_simulation(params)
-        # Add a column to identify the simulation number
+        # Add a column to identify the simulation run and id
+        # Simulation and model instantiation should not replace or modify simulation_id
+        assert params['simulation_id'] == model.simulation_id
+        simulation_run_id = simulation_run_ids[i]
         for res in agent_results:
             res['simulation_run'] = i + 1
+            res['simulation_run_id'] = simulation_run_id
         for res in model_results:
             res['simulation_run'] = i + 1
+            res['simulation_run_id'] = simulation_run_id
         agent_results_all.extend(agent_results)
         model_results_all.extend(model_results)
-        
         usage_summaries_all.append(get_autogen_usage_summary(model))
-    
         chat_results_all.append(get_autogen_chat_results(model))
+        graphs[simulation_run_id] = model.graph
+    
     # Create DataFrames from the results
     agent_df = pd.DataFrame(agent_results_all)
     model_df = pd.DataFrame(model_results_all)
-    
     chat_data = {"usage_summaries": usage_summaries_all,
                  "chat_results": chat_results_all}
     
     # Return a dictionary of DataFrames and objects which are JSON serializable
     data = {'agent': agent_df,
             'model': model_df,
-            **chat_data}
+            **chat_data,
+            "graphs": graphs}
     return data
