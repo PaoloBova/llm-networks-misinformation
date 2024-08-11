@@ -25,6 +25,7 @@ class DebateManager:
         self.model_results = []
 
         correct_agent = random.choice(self.agents)
+        self.source_node_id = correct_agent.agent_id
         correct_agent.update_knowledge({"guess": self.correct_answer,
                                         "reasoning": self.initial_reasoning})
     
@@ -40,11 +41,18 @@ class DebateManager:
 
         correct_count = sum(agent.knowledge['guess'] == self.correct_answer
                             for agent in self.agents)
+        correct_agent_ids = [agent.agent_id for agent in self.agents
+                             if agent.knowledge['guess'] == self.correct_answer]
+        misinformed_agent_ids = [agent.agent_id for agent in self.agents
+                                 if agent.knowledge['guess'] != self.correct_answer]
         self.model_results.append({
                     'simulation_id': parameters.get('simulation_id', 0),
                     'round':  self.tick,
+                    'source_node_id': self.source_node_id,
                     'correct_count': correct_count,
-                    'correct_proportion': correct_count / len(self.agents)
+                    'correct_agent_ids': correct_agent_ids,
+                    'correct_proportion': correct_count / len(self.agents),
+                    'misinformed_agent_ids': misinformed_agent_ids,
                 })
         print(f"Correct answers: {correct_count}/{len(self.agents)}.")
             
