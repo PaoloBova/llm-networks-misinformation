@@ -54,6 +54,9 @@ class DebateManager:
         # Loop through agents in random order
         for i in range(len(shuffled_agents)):
             self.agent_step(shuffled_agents[i], parameters)
+        
+        if self.tick == parameters.get("info_shock_arrival_time"):
+            self.apply_information_shock(parameters)
 
     def agent_step(self, agent, parameters):
         graph = parameters["graph"]
@@ -85,3 +88,9 @@ class DebateManager:
             print(f"Agent {agent1.name} updated knowledge to: {agent1.knowledge}")
         else:
             print(f"Agent {agent1.name} keeps its guess and reasoning unchanged: {agent1.knowledge}.")
+            
+    def apply_information_shock(self, parameters):
+        """Apply a shock to the agents' knowledge."""
+        shock_fn = parameters.get("info_shock_fn", None)
+        if shock_fn is not None:
+            shock_fn(self.agents, parameters)
