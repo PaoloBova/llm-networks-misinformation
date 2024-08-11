@@ -40,17 +40,3 @@ def plot_simulation_results(params):
     
     return fig
 
-# TODO: Analysis that occurs after simulation runs
-# Calculate the proportion of model chains from chat history
-# Which fraction are incomplete.
-# What is the average distance from their apparent origin and the true
-# origin?
-# What is the average path length of the reported attribution chain?
-# Generate the subnetwork of apparent attribution
-# How does this subnetwork change over time?
-# Can we use centrality to identify likely suspects in spreading
-# misinformation?
-# What are the characteristics of these spreaders?
-# Are these nodes usually route nodes in the subnetwork?
-# Bond Percolation process: How often do chats become untenable for
-# transmitting true information (e.g. polarized by belief in false sources)?
