@@ -95,9 +95,11 @@ def run_multiple_simulations(params):
     graphs = {}
     # All params in params_list should have the same `simulation_id`
     # Only their `simulation_run` and `simulation_run_id` should differ
+    simulation_id =  params_list[0]['simulation_id']
     assert params_list[0].get('simulation_id') is not None
-    assert all(params['simulation_id'] == params_list[0]['simulation_id']
+    assert all(params['simulation_id'] == simulation_id
                for params in params_list)
+
     # We need to create the random ids for each simulation run before
     # we set the random seeds for the simulation runs.
     simulation_run_ids = [data_utils.create_id()
@@ -105,14 +107,14 @@ def run_multiple_simulations(params):
     for i, params in enumerate(params_list):
         set_random_seed(params['seed'])
         model, agent_results, model_results = run_simulation(params)
-        # Add a column to identify the simulation run and id
-        # Simulation and model instantiation should not replace or modify simulation_id
-        assert params['simulation_id'] == model.simulation_id
+        # Add columns to identify the simulation id, run, and run id
         simulation_run_id = simulation_run_ids[i]
         for res in agent_results:
+            res['simulation_id'] = simulation_id
             res['simulation_run'] = i + 1
             res['simulation_run_id'] = simulation_run_id
         for res in model_results:
+            res['simulation_id'] = simulation_id
             res['simulation_run'] = i + 1
             res['simulation_run_id'] = simulation_run_id
         agent_results_all.extend(agent_results)
