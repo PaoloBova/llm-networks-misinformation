@@ -15,7 +15,6 @@ class DebateManager:
     def __init__(self, agents, params):
         names = ['correct_answer', 'num_rounds']
         correct_answer, num_rounds = [params[k] for k in names]
-        self.simulation_id = params.get('simulation_id', "no_sim_id")
         self.agents = agents
         self.num_rounds = num_rounds
         self.correct_answer = int(correct_answer)  # Ensure correct_answer is an integer
@@ -33,7 +32,6 @@ class DebateManager:
     def collect_stats(self, parameters):
         for agent in self.agents:
             self.agent_results.append({
-                    'simulation_id': parameters.get('simulation_id', 0),  # Default to 0 if 'simulation_id' is not in parameters
                     'round': self.tick,
                     'agent_id': agent.name,
                     'guess': agent.knowledge['guess'],
@@ -47,7 +45,6 @@ class DebateManager:
         misinformed_agent_ids = [agent.agent_id for agent in self.agents
                                  if agent.knowledge['guess'] != self.correct_answer]
         self.model_results.append({
-                    'simulation_id': parameters.get('simulation_id', 0),
                     'round':  self.tick,
                     'source_node_id': self.source_node_id,
                     'correct_count': correct_count,
