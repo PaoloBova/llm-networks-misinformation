@@ -151,7 +151,11 @@ def compute_cascade_depth(subgraph, source_node):
     """
     if source_node not in subgraph:
         return 0
-    depth = max(nx.single_source_shortest_path_length(subgraph, source_node).values())
+    try:
+        depth = max(nx.single_source_shortest_path_length(subgraph, source_node).values())
+    except nx.exception.NetworkXNoPath:
+        # If the source node or any other node is disconnected from the subgraph
+        depth = 0
     return depth
 
 def compute_cascade_breadth(graph, subgraph):
@@ -212,7 +216,15 @@ def compute_structural_virality(subgraph):
     for node1 in subgraph.nodes():
         for node2 in subgraph.nodes():
             if node1 != node2:
-                shortest_path_length = nx.shortest_path_length(subgraph, node1, node2)
+                # Compute the shortest path length between node1 and node2
+                # If there is no path between the nodes, we set the shortest
+                # path length to 0. Since we are interested in how far the
+                # information has spread, it doesn't make sense to consider the
+                # distance between disconnected nodes.
+                try:
+                    shortest_path_length = nx.shortest_path_length(subgraph, node1, node2)
+                except nx.exception.NetworkXNoPath:
+                    shortest_path_length = 0
                 structural_virality += shortest_path_length
     structural_virality /= len(subgraph) * (len(subgraph) - 1)
     return structural_virality
@@ -369,11 +381,11 @@ def compute_metrics_for_time_series(graph, df_time_series):
     Returns:
     metrics: a list of dictionaries containing metrics for each time step
     """
-    source_node_id = df_time_series['source_node_id'][0]
-    simulation_id = df_time_series['simulation_id'][0]
-    correct_nodes = df_time_series['correct_agent_ids']
-    misinformed_nodes = df_time_series['misinformed_agent_ids']
-    rounds = df_time_series['round']
+    source_node_id = df_time_series['source_node_id'].iloc[0]
+    simulation_run_id = df_time_series['simulation_run_id'].iloc[0]
+    correct_nodes = df_time_series['correct_agent_ids'].reset_index(drop=True)
+    misinformed_nodes = df_time_series['misinformed_agent_ids'].reset_index(drop=True)
+    rounds = df_time_series['round'].reset_index(drop=True)
     metrics = []
     for i in range(len(rounds)):
         correct_nodes_i = correct_nodes[i]
@@ -384,7 +396,7 @@ def compute_metrics_for_time_series(graph, df_time_series):
                                              misinformed_nodes_i,
                                              source_node_id)
         metrics_i['round'] = round
-        metrics_i['simulation_id'] = simulation_id
+        metrics_i['simulation_run_id'] = simulation_run_id
         metrics.append(metrics_i)
     return metrics
 
@@ -409,6 +421,7 @@ def compute_all_graph_metrics_from_model_data(model_data, graphs):
 
         # Compute basic graph metrics
         basic_metrics = compute_metrics(graph)
+        basic_metrics["simulation_run_id"] = simulation_run_id
         assert src.utils.dict_values_are_scalar(basic_metrics)
         all_metrics['basic_metrics'].append(basic_metrics)
 

@@ -5,7 +5,9 @@ import src.plot_utils
 
 def plot_metric_against_topology(data,
                                  metric='correct_count',
-                                 var='rewiring_probability'):
+                                 var='round',
+                                 group_var='simulation_run_id',
+                                 data_key='model',):
     """Plot the metric against the topology using the data in data.
     
     Parameters:
@@ -20,8 +22,8 @@ def plot_metric_against_topology(data,
     fig = src.plot_utils.plot_metric_against_var(data=data,
                                             metric=metric,
                                             var=var,
-                                            group_var='simulation_run',
-                                            data_key='results',
+                                            group_var=group_var,
+                                            data_key=data_key,
                                             plot_type='line',
                                             marker='o',
                                             linestyle='-',

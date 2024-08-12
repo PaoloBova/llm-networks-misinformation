@@ -95,6 +95,7 @@ def run_multiple_simulations(params:Dict, secrets:Dict={}) -> Dict:
     params_list = utils.dict_list(params) if isinstance(params, dict) else params
     # Assert that params is a list of dictionaries
     assert all(isinstance(params, dict) for params in params_list)
+    print("Number of simulations: ", len(params_list))
 
     agent_results_all = []
     model_results_all = []

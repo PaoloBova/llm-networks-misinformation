@@ -1,6 +1,6 @@
-import os
 from dotenv import load_dotenv
-
+import os
+import random
 from src.agent import Agent
 import src.core
 import src.data_utils
@@ -21,15 +21,15 @@ data_dir = f"data/{simulation_id}"
 plots_dir = f"plots/{simulation_id}"
 
 # Adjustable parameters
-NUM_AGENTS = 4
+NUM_AGENTS = 8
 CORRECT_ANSWER = "42"
-NUM_ROUNDS = 4
+NUM_ROUNDS = 10
 TEMPERATURE = 0.2  # Adjust this to control the randomness of responses
 prompt_functions = {"baseline_game": prompts.baseline_game}
 params = {"simulation_id": simulation_id,
           "commit": current_commit,
-          "seed": [1],
-          "network_seed": [1],
+          "seed": [random.randint(0, 1000) for _ in range(2)],
+          "network_seed": [random.randint(0, 1000) for _ in range(2)],
           "model_class": DebateManager,
           "agent_class": Agent,
           "num_agents": NUM_AGENTS,
@@ -39,7 +39,7 @@ params = {"simulation_id": simulation_id,
           "prompt_functions": prompt_functions,
           "src.networks.init_graph_type": "watts_strogatz_graph",
           "ws_graph_k": 2,
-          "ws_graph_beta": 0,}
+          "ws_graph_beta": [0, 0.2, 0.4, 0.6, 0.8, 1],}
 
 results = src.core.run_multiple_simulations(params, secrets=secrets)
 src.data_utils.save_data(results, data_dir=data_dir)

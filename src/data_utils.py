@@ -208,6 +208,7 @@ def save_data(data, data_dir=None):
     # Create the folder if it doesn't exist
     if not os.path.exists(data_dir):
         os.makedirs(data_dir)
+    print("Saving data to:", data_dir)
 
     # Iterate over the items in the dictionary
     for key, value in data.items():
