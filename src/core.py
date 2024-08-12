@@ -144,5 +144,7 @@ def run_multiple_simulations(params:Dict, secrets:Dict={}) -> Dict:
     data = {'agent': agent_df,
             'model': model_df,
             **chat_data,
-            "graphs": graphs}
+            "graphs": graphs,
+            "params": [data_utils.filter_dict_for_json(params)
+                       for params in params_list]}
     return data
