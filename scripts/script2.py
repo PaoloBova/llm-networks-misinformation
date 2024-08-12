@@ -11,6 +11,7 @@ import src.prompts as prompts
 # Load API key as environment variable from .env file
 load_dotenv()
 API_KEY = os.getenv("OPENAI_API_KEY")
+secrets = {"api_key": API_KEY}
 
 # Simulation metadata and directories
 simulation_id = src.data_utils.create_id()
@@ -25,8 +26,7 @@ NUM_ROUNDS = 4
 TEMPERATURE = 0.2  # Adjust this to control the randomness of responses
 prompt_functions = {"baseline_game": prompts.summary_game}
 initial_reasoning = "You have direct information from the authorities that this is the correct answer, verified by the majority of experts. Experts also say that relying on guesses by others is very likely to lead to the wrong answer."
-params = {"api_key": API_KEY,
-          "simulation_id": simulation_id,
+params = {"simulation_id": simulation_id,
           "commit": current_commit,
           "seed": [1],
           "network_seed": [1],
@@ -43,7 +43,7 @@ params = {"api_key": API_KEY,
           "ws_graph_k": 2,
           "ws_graph_beta": 0,}
 
-results = src.core.run_multiple_simulations(params)
+results = src.core.run_multiple_simulations(params, secrets=secrets)
 src.data_utils.save_data(results, data_dir=data_dir)
 
 # It is safer to compute graph metrics after saving the simulation data.

@@ -5,6 +5,7 @@ import pandas as pd
 import random
 import src.utils as utils
 import src.data_utils as data_utils
+from typing import Dict
 
 def set_random_seed(seed: int):
     """
@@ -52,7 +53,7 @@ def run_simulation(params):
     agent_results, model_results = run(model, params)
     return model, agent_results, model_results
 
-def get_autogen_chat_results(model):
+def get_autogen_chat_results(model, simulation_run_id):
     """Get the autogen chat results from the model and ensure they are in a JSON
     serializable format."""
     chat_results = {agent.name: agent.chat_messages
@@ -69,7 +70,7 @@ def get_autogen_chat_results(model):
         agent_key = str(agent.name)
         chat_messages = agent.chat_messages
         for peer_agent, chat in chat_messages.items():
-            chat_id = f"agent1:{agent_key}_agent2:{str(peer_agent.name)}_sim:{model.simulation_id}"
+            chat_id = f"agent1:{agent_key}_agent2:{str(peer_agent.name)}_sim:{simulation_run_id}"
             chat_results[chat_id].append(chat)
     return chat_results
 
@@ -78,8 +79,15 @@ def get_autogen_usage_summary(model):
     usage_summary = autogen.gather_usage_summary(model.agents)
     return usage_summary
 
-def run_multiple_simulations(params):
+def run_multiple_simulations(params:Dict, secrets:Dict={}) -> Dict:
     """Run multiple simulations and collect the results.
+    
+    Parameters:
+    params: The parameters for the simulations.
+    secrets: A dictionary of secrets to be used in the simulations.
+    
+    Returns:
+    A dictionary of DataFrames and objects which are JSON serializable.
     
     See Agents.jl `Agents.paramscan` method for a similar API.
     """
@@ -106,7 +114,10 @@ def run_multiple_simulations(params):
                           for _ in range(len(params_list))]
     for i, params in enumerate(params_list):
         set_random_seed(params['seed'])
-        model, agent_results, model_results = run_simulation(params)
+        # We keep secrets separate from the rest of the params as we don't want
+        # to expose them in the results
+        args = {**params, **secrets}
+        model, agent_results, model_results = run_simulation(args)
         # Add columns to identify the simulation id, run, and run id
         simulation_run_id = simulation_run_ids[i]
         for res in agent_results:
@@ -120,7 +131,7 @@ def run_multiple_simulations(params):
         agent_results_all.extend(agent_results)
         model_results_all.extend(model_results)
         usage_summaries_all.append(get_autogen_usage_summary(model))
-        chat_results_all.append(get_autogen_chat_results(model))
+        chat_results_all.append(get_autogen_chat_results(model, simulation_run_id))
         graphs[simulation_run_id] = model.graph
     
     # Create DataFrames from the results
