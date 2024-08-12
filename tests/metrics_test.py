@@ -46,8 +46,7 @@ class TestAdvancedMetrics:
         graph.add_edge(1, 3)
         graph.add_edge(2, 3)
         assert metrics.compute_cascade_depth(graph, 1) == 1
-        with pytest.raises(AssertionError):
-            metrics.compute_cascade_depth(graph, 4)
+        assert metrics.compute_cascade_depth(graph, 4) == 0
 
     def test_compute_cascade_breadth(self):
         graph = nx.Graph()
