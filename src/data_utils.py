@@ -154,6 +154,44 @@ def serialize_graphs(graphs):
         serialized_graphs[key] = serialized_graph
     return serialized_graphs
 
+import json
+
+def filter_dict_for_json(d):
+    """
+    Recursively filter out values from a dictionary that cannot be serialized to JSON.
+
+    Parameters:
+    d: a dictionary
+
+    Returns:
+    A new dictionary with only JSON serializable values.
+    """
+    filtered_dict = {}
+
+    for key, value in d.items():
+        if isinstance(value, dict):
+            filtered_dict[key] = filter_dict_for_json(value)
+        elif isinstance(value, list):
+            filtered_list = []
+            for item in value:
+                if isinstance(item, dict):
+                    filtered_list.append(filter_dict_for_json(item))
+                else:
+                    try:
+                        json.dumps(item)
+                        filtered_list.append(item)
+                    except TypeError:
+                        continue
+            filtered_dict[key] = filtered_list
+        else:
+            try:
+                json.dumps(value)
+                filtered_dict[key] = value
+            except TypeError:
+                continue
+
+    return filtered_dict
+
 def save_data(data, data_dir=None):
     """
     Save each dataframe in `data` to the given folder. 

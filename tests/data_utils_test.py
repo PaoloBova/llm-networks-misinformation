@@ -1,6 +1,6 @@
 import datetime
 import pytest
-from src.data_utils import save_name, extract_data
+from src.data_utils import save_name, extract_data, filter_dict_for_json
 import uuid
 
 class TestSaveName:
@@ -204,3 +204,25 @@ class TestExtractData:
         message = '{"guess": "42", "reasoning": "It is the answer to life, the universe, and everything.", "extra_key": "extra_value"}'
         data_format = {"guess": str, "reasoning": str}
         assert extract_data(message, data_format) == []
+
+class TestFilterDictForJSON:
+
+    def test_filter_dict_for_json(self):
+        # Test with a dictionary that contains JSON serializable values
+        d = {"a": 1, "b": "test", "c": [1, 2, 3], "d": {"e": 4}}
+        assert filter_dict_for_json(d) == d
+
+        # Test with a dictionary that contains a non-JSON serializable value
+        d = {"a": 1, "b": "test", "c": [1, 2, 3], "d": {"e": 4, "f": set([1, 2, 3])}}
+        expected = {"a": 1, "b": "test", "c": [1, 2, 3], "d": {"e": 4}}
+        assert filter_dict_for_json(d) == expected
+
+        # Test with a dictionary that contains a list with a non-JSON serializable value
+        d = {"a": 1, "b": "test", "c": [1, 2, 3, set([1, 2, 3])], "d": {"e": 4}}
+        expected = {"a": 1, "b": "test", "c": [1, 2, 3], "d": {"e": 4}}
+        assert filter_dict_for_json(d) == expected
+
+        # Test with a dictionary that contains a dictionary with a non-JSON serializable value
+        d = {"a": 1, "b": "test", "c": [1, 2, 3], "d": {"e": 4, "f": {"g": set([1, 2, 3])}}}
+        expected = {"a": 1, "b": "test", "c": [1, 2, 3], "d": {"e": 4, "f": {}}}
+        assert filter_dict_for_json(d) == expected
