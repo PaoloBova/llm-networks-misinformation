@@ -1,4 +1,6 @@
+import matplotlib.cm as cm
 import matplotlib.pyplot as plt
+import numpy as np
 
 def plot_simulation_results(params):
     """Plot the results of multiple simulations"""
@@ -40,11 +42,10 @@ def plot_simulation_results(params):
     
     return fig
 
-def plot_metric_against_var(data,
+def plot_metric_against_var(df,
                             metric='fraction_correct_nodes',
                             var='rewiring_probability',
                             group_var=None,
-                            data_key='results',
                             plot_type='line',
                             plotting_library='matplotlib',
                             marker='o',
@@ -54,17 +55,18 @@ def plot_metric_against_var(data,
                             title='Title',
                             xlabel='X Label',
                             ylabel='Y Label',
+                            legend="auto",
                             ylim=None,
                             xticks=None):
-    """Plot `metric` aginst the given `topology_var` using the data in `data`.
+    """Plot `metric` against the given `topology_var` using the data in `data`.
     
     If relevant, plot a line for each group in the data.
     
     Parameters:
-    data: a dictionary of dataframes or json data
+    df: a pandas dataframe with all of the data we want to plot
     metric: the metric to plot
     var: the variable to plot against
-    group_var: the variable to group the data by
+    group_var: the variable to group the data by and determine the color of the lines
     plot_type: the type of plot to create
     
     Returns:
@@ -73,21 +75,18 @@ def plot_metric_against_var(data,
     
     fig, ax = plt.subplots()
     
-    # Look at the relevant dataframe in the data dictionary
-    df = data.get(data_key)
-    if df is None:
-        raise ValueError(f'No data found for key: {data_key}')
-    
     if plotting_library == 'matplotlib':
         if plot_type == 'line':
             # Plot a line for each group in the data
             # If no group_var is provided, plot a single line
-            if group_var is None:
-                ax.plot(df[var], df[metric], marker=marker, linestyle=linestyle, color=color, alpha=alpha)
-            else:
-                for group in df[group_var].unique():
+            if group_var is not None:
+                unique_groups = df[group_var].unique()
+                colors = cm.rainbow(np.linspace(0, 1, len(unique_groups)))
+                for i, group in enumerate(unique_groups):
                     group_df = df[df[group_var] == group]
-                    ax.plot(group_df[var], group_df[metric], marker=marker, linestyle=linestyle, color=color, alpha=alpha, label=group)
+                    ax.plot(group_df[var], group_df[metric], marker=marker, linestyle=linestyle, color=colors[i], alpha=alpha, label=group)
+            else:
+                ax.plot(df[var], df[metric], marker=marker, linestyle=linestyle, color=color, alpha=alpha)
         else:
             raise ValueError(f'Plot type not supported: {plot_type}')
         
@@ -98,7 +97,11 @@ def plot_metric_against_var(data,
             ax.set_ylim(ylim)
         if xticks is not None:
             ax.set_xticks(xticks)
-        ax.legend()
+        if legend == "auto":
+            if group_var is not None:
+                ax.legend()
+        elif legend is not None:
+            ax.legend(legend)
         ax.grid(True)
         
     return fig

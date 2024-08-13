@@ -6,6 +6,7 @@ import src.plot_utils
 def plot_metric_against_topology(data,
                                  metric='correct_count',
                                  var='round',
+                                 title=None,
                                  group_var='simulation_run_id',
                                  data_key='model',):
     """Plot the metric against the topology using the data in data.
@@ -19,19 +20,24 @@ def plot_metric_against_topology(data,
     fig: a matplotlib figure object
     """
     
-    fig = src.plot_utils.plot_metric_against_var(data=data,
+    # Look at the relevant dataframe in the data dictionary
+    df = data.get(data_key)
+    if df is None:
+        raise ValueError(f'No data found for key: {data_key}')
+    
+    fig = src.plot_utils.plot_metric_against_var(df,
                                             metric=metric,
                                             var=var,
                                             group_var=group_var,
-                                            data_key=data_key,
+                                            legend=None,
                                             plot_type='line',
                                             marker='o',
                                             linestyle='-',
                                             color='lightcoral',
                                             alpha=0.5,
-                                            title='Proportion of Agents with Correct Answer',
+                                            title=title,
                                             xlabel=var,
                                             ylabel='% Correct',
-                                            ylim=(0, 1.1))
+                                            ylim=None)
     
     return fig
