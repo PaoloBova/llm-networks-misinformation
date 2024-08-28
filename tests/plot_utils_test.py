@@ -26,11 +26,10 @@ def test_plot_matric_against_var():
 
     # Call the second function
     # Note: Usually, you don't need to specify as many arguments as I do here.
-    plot_metric_against_var(data={'results': grouped},
+    plot_metric_against_var(df=grouped,
                             metric=y_var,
                             var='round',
                             group_var='simulation_run',
-                            data_key='results',
                             plot_type='line',
                             marker='o',
                             linestyle='-',
