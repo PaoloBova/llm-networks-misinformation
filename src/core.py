@@ -48,7 +48,10 @@ def run(model, parameters):
 def run_simulation(params):
     """Initialize the agents and model, then run the model."""
     model_class = params['model_class']
-    agents = initialize_agents(params)
+    if params['agent_class'] is not None:
+        agents = initialize_agents(params)
+    else:
+        agents = None
     model = model_class(agents, params)
     agent_results, model_results = run(model, params)
     return model, agent_results, model_results
