@@ -3,6 +3,7 @@ import hashlib
 import json
 import os
 import matplotlib.pyplot as plt
+import numpy as np
 import networkx
 import pandas as pd
 import plotly.graph_objects as go
@@ -303,3 +304,42 @@ def extract_data(message: str, data_format: Dict[str, type]) -> List[Dict[str, A
             data.append(new_data)
 
     return data
+
+def sanitize_dict_values(results_dict):
+    """
+    Sanitizes the values in the input dictionary.
+
+    If a value is a numpy array, it is reshaped to 1D and resized to match the
+    length of the longest array in the dictionary.
+
+    If a value is not a numpy array, it is converted into a numpy array with the
+    same length as the longest array in the dictionary.
+
+    If the input dictionary is empty or None, a warning is printed and an empty
+    dictionary is returned.
+
+    Parameters:
+    results_dict (dict): The input dictionary to sanitize.
+
+    Returns:
+    dict: The sanitized dictionary.
+    """
+
+    if not results_dict:
+        print("Warning: Input dictionary is empty or None.")
+        return {}
+    
+    max_length = max(len(v) for v in results_dict.values() if isinstance(v, np.ndarray))
+    
+    for key, value in results_dict.items():
+        if isinstance(value, np.ndarray):
+            if value.ndim != 1:
+                print(f"Warning: {key} is not a 1D array. Reshaping to 1D.")
+                value = value.ravel()
+            if len(value) < max_length:
+                value = np.resize(value, max_length)
+        else:
+            value = np.full(max_length, value)
+        results_dict[key] = value
+
+    return results_dict

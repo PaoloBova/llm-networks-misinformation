@@ -150,12 +150,17 @@ def run_multiple_simulations(params:Dict, secrets:Dict={}) -> Dict:
                        for params in params_list]}
     return data
 
-def paramscan(params:Dict, secrets:Dict={}) -> Dict:
+def paramscan(params:Dict,
+              secrets:Dict={},
+              collect_as_vectors:bool=False) -> Dict:
     """Run multiple simulations and collect the results.
     
     Parameters:
     params: The parameters for the simulations.
     secrets: A dictionary of secrets to be used in the simulations.
+    collect_as_vectors: Whether the collected results are dicts of vectors or
+      scalars. In the former case, we need to concatenate the vectors before we
+      can construct a dataframe from the results.
     
     Returns:
     A dictionary of DataFrames and objects which are JSON serializable.
@@ -200,9 +205,22 @@ def paramscan(params:Dict, secrets:Dict={}) -> Dict:
         agent_results_all.extend(agent_results)
         model_results_all.extend(model_results)
     
+    if collect_as_vectors:
+        agent_results_new = {}
+        if agent_results_all:
+            for k in agent_results_all[0].keys():
+                agent_results_new[k] = np.hstack([d[k] for d in agent_results_all])
+        agent_results_new = data_utils.sanitize_dict_values(agent_results_new)
+        
+        model_results_new = {}
+        if model_results_all:
+            for k in model_results_all[0].keys():
+                model_results_new[k] = np.hstack([d[k] for d in model_results_all])
+        model_results_new = data_utils.sanitize_dict_values(model_results_new)
+
     # Create DataFrames from the results
-    agent_df = pd.DataFrame(agent_results_all)
-    model_df = pd.DataFrame(model_results_all)
+    agent_df = pd.DataFrame(agent_results_new)
+    model_df = pd.DataFrame(model_results_new)
     
     # Return a dictionary of DataFrames and objects which are JSON serializable
     data = {'agent': agent_df,
