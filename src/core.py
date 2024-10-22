@@ -149,3 +149,64 @@ def run_multiple_simulations(params:Dict, secrets:Dict={}) -> Dict:
             "params": [data_utils.filter_dict_for_json(params)
                        for params in params_list]}
     return data
+
+def paramscan(params:Dict, secrets:Dict={}) -> Dict:
+    """Run multiple simulations and collect the results.
+    
+    Parameters:
+    params: The parameters for the simulations.
+    secrets: A dictionary of secrets to be used in the simulations.
+    
+    Returns:
+    A dictionary of DataFrames and objects which are JSON serializable.
+    
+    See Agents.jl `Agents.paramscan` method for a similar API.
+    """
+    # If params is a dictionary, convert it into a list of dictionaries
+    params_list = utils.dict_list(params) if isinstance(params, dict) else params
+    # Assert that params is a list of dictionaries
+    assert all(isinstance(params, dict) for params in params_list)
+    print("Number of simulations: ", len(params_list))
+
+    agent_results_all = []
+    model_results_all = []
+    # All params in params_list should have the same `simulation_id`
+    # Only their `simulation_run` and `simulation_run_id` should differ
+    simulation_id =  params_list[0]['simulation_id']
+    assert params_list[0].get('simulation_id') is not None
+    assert all(params['simulation_id'] == simulation_id
+               for params in params_list)
+
+    # We need to create the random ids for each simulation run before
+    # we set the random seeds for the simulation runs.
+    simulation_run_ids = [data_utils.create_id()
+                          for _ in range(len(params_list))]
+    for i, params in enumerate(params_list):
+        set_random_seed(params['seed'])
+        # We keep secrets separate from the rest of the params as we don't want
+        # to expose them in the results
+        args = {**params, **secrets}
+        _model, agent_results, model_results = run_simulation(args)
+        # Add columns to identify the simulation id, run, and run id
+        simulation_run_id = simulation_run_ids[i]
+        for res in agent_results:
+            res['simulation_id'] = simulation_id
+            res['simulation_run'] = i + 1
+            res['simulation_run_id'] = simulation_run_id
+        for res in model_results:
+            res['simulation_id'] = simulation_id
+            res['simulation_run'] = i + 1
+            res['simulation_run_id'] = simulation_run_id
+        agent_results_all.extend(agent_results)
+        model_results_all.extend(model_results)
+    
+    # Create DataFrames from the results
+    agent_df = pd.DataFrame(agent_results_all)
+    model_df = pd.DataFrame(model_results_all)
+    
+    # Return a dictionary of DataFrames and objects which are JSON serializable
+    data = {'agent': agent_df,
+            'model': model_df,
+            "params": [data_utils.filter_dict_for_json(params)
+                       for params in params_list]}
+    return data
