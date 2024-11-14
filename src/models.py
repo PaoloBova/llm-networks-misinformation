@@ -66,7 +66,7 @@ class DebateManager:
 
     def agent_step(self, agent, parameters):
         graph = self.graph
-        neighbour_ids = list(graph.neighbors(agent.name - 1))
+        neighbour_ids = list(graph.neighbors(agent.agent_id - 1))
         # Determine who the selected agent interacts with.
         neighbour_id = random.choice(neighbour_ids)
         self.exchange_information(agent, self.agents[neighbour_id], parameters)

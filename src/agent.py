@@ -3,7 +3,7 @@ import random
 
 class Agent(autogen.ConversableAgent):
     def __init__(self, agent_id, api_key, temperature, model="gpt-3.5-turbo", knowledge=None):
-        super().__init__(name=agent_id,
+        super().__init__(name=str(agent_id),
                          llm_config={"model": model,
                                      "api_key": api_key,
                                      "temperature": temperature})
