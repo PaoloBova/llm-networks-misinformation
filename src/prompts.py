@@ -16,6 +16,20 @@ def prompt_fn_example(sender: autogen.ConversableAgent,
         "role": "system",
         "content": f"""You've received information that the number might be {guess} because '{reasoning}'. Recall that you currently believe {own_guess} because of the following reason: "{own_reasoning}". Consider whether you should update your beliefs. Give your new guess and reasoning in json format even if your answer is unchanged: {json_format_string}"""
     }
+    
+def prompt_fn_test(sender: autogen.ConversableAgent,
+                      recipient: autogen.ConversableAgent,
+                      context: Dict) -> Dict:
+    tick = context.get("tick", 0)
+    if tick==1:
+        return {
+            "role": "system",
+            "content": f"""This is the first round of the game. The correct answer is 42."""
+        }
+    return {
+        "role": "system",
+        "content": f"""Repeat the initial line of our conversation I told you"""
+    }
 
 # Read prompt template from file
 with open("prompt_templates/prompt1.txt", 'r') as file:
