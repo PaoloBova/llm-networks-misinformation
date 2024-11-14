@@ -74,7 +74,8 @@ class DebateManager:
     def exchange_information(self, agent1, agent2, parameters):
         construct_prompt_fn = parameters["prompt_functions"]["baseline_game"]
         # Agent 1 receives a message from their peer agent 2 that exchanges info
-        prompt = construct_prompt_fn(agent2, agent1, parameters)
+        args = {**parameters, "tick": self.tick}
+        prompt = construct_prompt_fn(agent2, agent1, args)
         
         # Agent 1 chats to agent 2 to learn what agent 2 is thinking.
         # Only agent 1 updates their knowledge based on the conversation.
