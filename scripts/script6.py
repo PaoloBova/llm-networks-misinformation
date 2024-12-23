@@ -1,11 +1,11 @@
 from dotenv import load_dotenv
 import os
 import random
-from src.agent import Agent
+from src.agent import NetworkAgent
 import src.core
 import src.data_utils
 import src.metrics
-from src.models import DebateManager
+from src.models import TechnologyLearningGame
 import src.plot_utils
 import src.prompts as prompts
 
@@ -30,8 +30,9 @@ params = {"simulation_id": simulation_id,
           "commit": current_commit,
           "seed": [random.randint(0, 1000) for _ in range(2)],
           "network_seed": [random.randint(0, 1000) for _ in range(1)],
-          "model_class": DebateManager,
-          "agent_class": Agent,
+          "model_class": TechnologyLearningGame,
+          "agent_class": NetworkAgent,
+          "adjudicator_agent_class": NetworkAgent,
           "num_agents": NUM_AGENTS,
           "correct_answer": CORRECT_ANSWER,
           "num_rounds": NUM_ROUNDS,

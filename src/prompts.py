@@ -18,13 +18,13 @@ def prompt_fn_example(sender: autogen.ConversableAgent,
     }
     
 def prompt_fn_test(sender: autogen.ConversableAgent,
-                      recipient: autogen.ConversableAgent,
-                      context: Dict) -> Dict:
+                   recipient: autogen.ConversableAgent,
+                   context: Dict) -> Dict:
     tick = context.get("tick", 0)
     if tick==1:
         return {
             "role": "system",
-            "content": f"""This is the first round of the game. The correct answer is 42."""
+            "content": f"""This is the first round of the game. The correct answer is 42. Respond with 'I understand'."""
         }
     return {
         "role": "system",
