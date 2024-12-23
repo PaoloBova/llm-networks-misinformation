@@ -78,3 +78,40 @@ def summary_game(sender: autogen.ConversableAgent,
     replacement_dict = map_placeholders_summary_game(sender, recipient, context)
     prompt = generate_prompt_from_template(replacement_dict, prompt_template2)
     return {"role": role, "content": prompt}
+
+# Read prompt template from file
+with open("prompt_templates/network_game_1.md", 'r') as file:
+    prompt_network_initial1 = file.read()
+
+# Read prompt template from file
+with open("prompt_templates/network_game_continue_1.md", 'r') as file:
+    prompt_network_continue1 = file.read()
+
+def network_game(_sender: autogen.ConversableAgent,
+                 recipient: autogen.ConversableAgent,
+                 context: Dict) -> Dict:
+    role = context.get("role", "system")
+    graph = context["graph"]
+    neighbour_ids = list(graph.neighbors(recipient.agent_id - 1))
+    neighbours = [utils.get_agent_by_id(neighbour_id, context["agents"])
+                  for neighbour_id in neighbour_ids]
+    # Neighbour decisions should be represented as as a string in the form:
+    # Neighbour {agent_id}: {decision} -> {utility} Utility gained.
+    neighbour_decisions_str = "\n".join(
+        [f"Neighbour {neighbour.agent_id}: {neighbour.knowledge['decision']} -> {neighbour.state["utility_gained"]} Utility gained."
+         for neighbour in neighbours])
+    time = context["tick"]
+    hq_chance = context.get("hq_chance", 0.8)
+    prior_b_quality = context.get("prior_b_quality", "You have no prior on whether B is of high or low quality.")
+    if time > 0:
+        prompt_template = prompt_network_initial1
+        replacement_dict = {"prior_b_quality": prior_b_quality,
+                            "hq_chance": hq_chance,
+                            "lq_chance": 1 - hq_chance,
+                            "json_format_string": recipient.knowledge_format}
+    else:
+        prompt_template = prompt_network_continue1
+        replacement_dict = {"neighbour_decisions": neighbour_decisions_str,
+                            "agent_id": recipient.agent_id}
+    prompt = generate_prompt_from_template(replacement_dict, prompt_template)
+    return {"role": role, "content": prompt}

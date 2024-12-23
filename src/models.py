@@ -101,3 +101,112 @@ class DebateManager:
         shock_fn = parameters.get("info_shock_fn", None)
         if shock_fn is not None:
             shock_fn(self.agents, parameters)
+            
+
+class TechnologyLearningGame:
+    """This class manages the technology learning game played on a network.
+    
+    It is the model of the simulation.
+    
+    Model properties are initialized when instantiated and the
+    `step` function specifies what happens when the model is run.
+    
+    See Agents.jl for a similar API for defining models."""
+    
+    def __init__(self, agents, params):
+        names = ['correct_answer', 'num_rounds']
+        correct_answer, num_rounds = [params[k] for k in names]
+        self.agents = agents
+        self.num_rounds = num_rounds
+        self.correct_answer = int(correct_answer)  # Ensure correct_answer is an integer
+        self.initial_reasoning = params.get("initial_reasoning", "I have direct information that this is the correct answer.")
+        self.tick = 0
+        self.agent_results = []
+        self.model_results = []
+        # In this model, we need a dummy adjudicator agent to prompt the agents.
+        # This should be a ConversableAgent from Autogen but the agent does not
+        # need a system prompt because we only use the agent to prompt the other
+        # agents in the model using the initiate_chat method. We do it this way
+        # to be more consisent with similar models where an adjudicator agent is
+        # necessary for evaluating the agents' responses.
+        self.adjudicator_agent = params["adjudicator_agent"]
+
+        correct_agent = random.choice(self.agents)
+        self.source_node_id = correct_agent.agent_id
+        correct_agent.update_knowledge({"guess": self.correct_answer,
+                                        "reasoning": self.initial_reasoning})
+        self.graph = networks.init_graph(params)
+    
+    def collect_stats(self, parameters):
+        for agent in self.agents:
+            self.agent_results.append({
+                    'round': self.tick,
+                    'agent_id': agent.name,
+                    'guess': agent.knowledge['guess'],
+                    'reasoning': agent.knowledge['reasoning']
+                })
+
+        correct_count = sum(agent.knowledge['guess'] == self.correct_answer
+                            for agent in self.agents)
+        correct_agent_ids = [agent.agent_id for agent in self.agents
+                             if agent.knowledge['guess'] == self.correct_answer]
+        misinformed_agent_ids = [agent.agent_id for agent in self.agents
+                                 if agent.knowledge['guess'] != self.correct_answer]
+        self.model_results.append({
+                    'round':  self.tick,
+                    'source_node_id': self.source_node_id,
+                    'correct_count': correct_count,
+                    'correct_agent_ids': correct_agent_ids,
+                    'correct_proportion': correct_count / len(self.agents),
+                    'misinformed_agent_ids': misinformed_agent_ids,
+                })
+        # print(f"Correct answers: {correct_count}/{len(self.agents)}.")
+            
+    def step(self, parameters):
+        self.tick += 1
+        shuffled_agents = random.sample(self.agents, len(self.agents))
+        # Loop through agents in random order
+        for i in range(len(shuffled_agents)):
+            self.agent_step(shuffled_agents[i], parameters)
+
+    def agent_step(self, agent, parameters):
+        self.respond_to_system(agent, parameters)
+        new_decision = agent.knowledge['decision']
+        agent.state["decision"] = new_decision
+        # Agent gains utility based on their decision
+        # It is well known that A gives you 1 utility with 0.5 chance, and 0 otherwise.
+        # Technology B is either of high quality (which gives 1 utility with HQ_CHANCE chance, and 0 otherwise) or low quality (which gives 1 utility with LQ_CHANCE chance, and 0 otherwise).
+        hq_chance = parameters.get("hq_chance", 0.8)
+        lq_chance = 1 - hq_chance
+        if new_decision == 1:
+            true_quality = parameters.get("true_quality", 0)
+            chance = hq_chance if true_quality == 1 else lq_chance
+            new_utility = random.choices([1, 0], weights=[chance, 1- chance])[0]
+        else:
+            new_utility = random.choices([1, 0], weights=[0.5, 0.5])[0]
+        agent.state["utility_gained"] = new_utility
+        agent.state["utility"] += new_utility
+    
+    def respond_to_system(self, agent, parameters):
+        construct_prompt_fn = parameters["prompt_functions"]["baseline_game"]
+        # The agent is prompted to reflect on the current state of the simulation
+        # and update their knowledge or beahviour accordingly.
+        args = {**parameters,
+                "tick": self.tick,
+                "neighbours": list(self.graph.neighbors(agent.agent_id - 1))}
+        adjudicator = self.adjudicator_agent
+        prompt = construct_prompt_fn(adjudicator, agent, args)
+        
+        chat_result = adjudicator.initiate_chat(
+            recipient=agent, 
+            message= prompt,
+            max_turns=1,
+            clear_history=False
+        )
+        
+        # Extract data from the chat message and update the agent's knowledge.
+        data_format = parameters.get("data_format", {"reasoning": str, "decision": int})
+        message = chat_result.chat_history[-1]["content"]
+        data = data_utils.extract_data(message, data_format)
+        if len(data) >= 1:
+            agent.update_knowledge(data[0])
