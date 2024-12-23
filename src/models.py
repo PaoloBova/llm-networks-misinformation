@@ -129,7 +129,7 @@ class TechnologyLearningGame:
         # agents in the model using the initiate_chat method. We do it this way
         # to be more consisent with similar models where an adjudicator agent is
         # necessary for evaluating the agents' responses.
-        self.adjudicator_agent = params["adjudicator_agent"]
+        self.adjudicator_agent = params.get("adjudicator_agent")
 
         correct_agent = random.choice(self.agents)
         self.source_node_id = correct_agent.agent_id
@@ -171,7 +171,7 @@ class TechnologyLearningGame:
 
     def agent_step(self, agent, parameters):
         self.respond_to_system(agent, parameters)
-        new_decision = agent.knowledge['decision']
+        new_decision = agent.knowledge.get('decision')
         agent.state["decision"] = new_decision
         # Agent gains utility based on their decision
         # It is well known that A gives you 1 utility with 0.5 chance, and 0 otherwise.
@@ -185,6 +185,8 @@ class TechnologyLearningGame:
         else:
             new_utility = random.choices([1, 0], weights=[0.5, 0.5])[0]
         agent.state["utility_gained"] = new_utility
+        if "utility" not in agent.state:
+            agent.state["utility"] = 0
         agent.state["utility"] += new_utility
     
     def respond_to_system(self, agent, parameters):

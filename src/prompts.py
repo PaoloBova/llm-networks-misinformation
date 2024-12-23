@@ -98,7 +98,7 @@ def network_game(_sender: autogen.ConversableAgent,
     # Neighbour decisions should be represented as as a string in the form:
     # Neighbour {agent_id}: {decision} -> {utility} Utility gained.
     neighbour_decisions_str = "\n".join(
-        [f"Neighbour {neighbour.agent_id}: {neighbour.knowledge['decision']} -> {neighbour.state["utility_gained"]} Utility gained."
+        [f"Neighbour {neighbour.agent_id}: {neighbour.knowledge['decision']} -> {neighbour.state['utility_gained']} Utility gained."
          for neighbour in neighbours])
     time = context["tick"]
     hq_chance = context.get("hq_chance", 0.8)

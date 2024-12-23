@@ -31,6 +31,15 @@ def initialize_agents(params):
                         temperature=temperature)
             for i in range(num_agents)]
 
+def init_adjudicator(params):
+    """Initialize and return an adjudicator agent"""
+    names = ['api_key', 'temperature']
+    api_key, temperature = [params[k] for k in names]
+    adjudicator_agent_class = params['adjudicator_agent_class']
+    return adjudicator_agent_class(agent_id=f"adjudicator_{0}",
+                                   api_key=api_key,
+                                   temperature=temperature)
+
 def run(model, parameters):
     print(f"Starting simulation with {len(model.agents)} agents.")
     
@@ -48,6 +57,8 @@ def run(model, parameters):
 def run_simulation(params):
     """Initialize the agents and model, then run the model."""
     model_class = params['model_class']
+    if params.get('adjudicator_agent_class') is not None:
+        params["adjudicator_agent"] = init_adjudicator(params)
     if params['agent_class'] is not None:
         agents = initialize_agents(params)
     else:
