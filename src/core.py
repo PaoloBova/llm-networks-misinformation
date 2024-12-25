@@ -20,16 +20,21 @@ def set_random_seed(seed: int):
     # Note that Autogen only offers a seed cache which must be set
     # each time a new API call to an LLM is made.
 
-def initialize_agents(params):
+def init_agents(params):
     """Initialize and return a list of agents"""
-    names = ['num_agents', 'api_key', 'temperature']
-    num_agents, api_key, temperature = [params[k] for k in names]
-    agent_class = params['agent_class']
-    # TODO: Generalize the agent initialization process
-    return [agent_class(agent_id=i+1,
-                        api_key=api_key,
-                        temperature=temperature)
-            for i in range(num_agents)]
+    agent_specs = params['agent_specs']
+    agents = []
+    for spec in agent_specs:
+        agent_class = spec['agent_class']
+        num_agents = spec.get('num_agents', 1)
+        agent_params = spec.get('agent_params', {})
+        
+        for _ in range(num_agents):
+            agent_id = len(agents) + 1
+            agent = agent_class(agent_id=agent_id, **agent_params)
+            agents.append(agent)
+
+    return agents
 
 def init_adjudicator(params):
     """Initialize and return an adjudicator agent"""
@@ -57,10 +62,10 @@ def run(model, parameters):
 def run_simulation(params):
     """Initialize the agents and model, then run the model."""
     model_class = params['model_class']
-    if params.get('adjudicator_agent_class') is not None:
+    if params.get('adjudicator_agent_class'):
         params["adjudicator_agent"] = init_adjudicator(params)
-    if params['agent_class'] is not None:
-        agents = initialize_agents(params)
+    if params.get('agent_specs'):
+        agents = init_agents(params)
     else:
         agents = None
     model = model_class(agents, params)

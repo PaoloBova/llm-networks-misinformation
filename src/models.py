@@ -114,12 +114,10 @@ class TechnologyLearningGame:
     See Agents.jl for a similar API for defining models."""
     
     def __init__(self, agents, params):
-        names = ['correct_answer', 'num_rounds']
-        correct_answer, num_rounds = [params[k] for k in names]
+        names = ['num_rounds']
+        num_rounds, = [params[k] for k in names]
         self.agents = agents
         self.num_rounds = num_rounds
-        self.correct_answer = int(correct_answer)  # Ensure correct_answer is an integer
-        self.initial_reasoning = params.get("initial_reasoning", "I have direct information that this is the correct answer.")
         self.tick = 0
         self.agent_results = []
         self.model_results = []
@@ -130,37 +128,36 @@ class TechnologyLearningGame:
         # to be more consisent with similar models where an adjudicator agent is
         # necessary for evaluating the agents' responses.
         self.adjudicator_agent = params.get("adjudicator_agent")
-
-        correct_agent = random.choice(self.agents)
-        self.source_node_id = correct_agent.agent_id
-        correct_agent.update_knowledge({"guess": self.correct_answer,
-                                        "reasoning": self.initial_reasoning})
         self.graph = networks.init_graph(params)
+        
+        if params["hq_chance"] > 0.5:
+            self.correct_answer = 'B'
+        else:
+            self.correct_answer = 'A'
     
     def collect_stats(self, parameters):
         for agent in self.agents:
             self.agent_results.append({
                     'round': self.tick,
                     'agent_id': agent.name,
-                    'guess': agent.knowledge['guess'],
+                    'decision': agent.knowledge['decision'],
                     'reasoning': agent.knowledge['reasoning']
                 })
 
-        correct_count = sum(agent.knowledge['guess'] == self.correct_answer
+        correct_count = sum(agent.knowledge['decision'] == self.correct_answer
                             for agent in self.agents)
         correct_agent_ids = [agent.agent_id for agent in self.agents
-                             if agent.knowledge['guess'] == self.correct_answer]
+                             if agent.knowledge['decision'] == self.correct_answer]
         misinformed_agent_ids = [agent.agent_id for agent in self.agents
-                                 if agent.knowledge['guess'] != self.correct_answer]
+                                 if agent.knowledge['decision'] != self.correct_answer]
         self.model_results.append({
                     'round':  self.tick,
-                    'source_node_id': self.source_node_id,
                     'correct_count': correct_count,
                     'correct_agent_ids': correct_agent_ids,
                     'correct_proportion': correct_count / len(self.agents),
                     'misinformed_agent_ids': misinformed_agent_ids,
                 })
-        # print(f"Correct answers: {correct_count}/{len(self.agents)}.")
+        print(f"Correct answers: {correct_count}/{len(self.agents)}.")
             
     def step(self, parameters):
         self.tick += 1
@@ -195,7 +192,8 @@ class TechnologyLearningGame:
         # and update their knowledge or beahviour accordingly.
         args = {**parameters,
                 "tick": self.tick,
-                "neighbours": list(self.graph.neighbors(agent.agent_id - 1))}
+                "agents": self.agents,
+                "graph": self.graph}
         adjudicator = self.adjudicator_agent
         prompt = construct_prompt_fn(adjudicator, agent, args)
         
@@ -207,7 +205,7 @@ class TechnologyLearningGame:
         )
         
         # Extract data from the chat message and update the agent's knowledge.
-        data_format = parameters.get("data_format", {"reasoning": str, "decision": int})
+        data_format = agent.knowledge_format if hasattr(agent, "knowledge_format") else {}
         message = chat_result.chat_history[-1]["content"]
         data = data_utils.extract_data(message, data_format)
         if len(data) >= 1:
