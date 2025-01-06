@@ -1,1 +1,1 @@
-Your recent experience: {agent_id}: Utility gained = .5; Neighbor experiences: {neighbour_experiences}
+Your recent experience: {agent_id}: Utility gained = {utility_gain}; Neighbor experiences: {neighbour_experiences}

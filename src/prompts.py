@@ -112,6 +112,7 @@ def network_game(_sender: autogen.ConversableAgent,
     else:
         prompt_template = prompt_network_continue1
         replacement_dict = {"neighbour_decisions": neighbour_decisions_str,
+                            "utility_gain": recipient.state["utility_gained"],
                             "agent_id": recipient.agent_id}
     prompt = generate_prompt_from_template(replacement_dict, prompt_template)
     return {"role": role, "content": prompt}
