@@ -94,14 +94,14 @@ def network_game(_sender: autogen.ConversableAgent,
     graph = context["graph"]
     agents = context["agents"]
     neighbour_ids = list(graph.neighbors(recipient.agent_id - 1))
-    neighbours = [agent for agent in agents if agent.agent_id in neighbour_ids]
+    neighbours = [agent for agent in agents if agent.agent_id - 1 in neighbour_ids]
     # Neighbour decisions should be represented as as a string in the form:
     # Neighbour {agent_id}: {decision} -> {utility} Utility gained.
     neighbour_decisions_str = "\n".join(
-        [f"Neighbour {neighbour.agent_id}: {'B' if neighbour.knowledge['decision']==1 else 'A'} -> {neighbour.state['utility_gained']} Utility gained."
+        [f"Neighbour {neighbour.agent_id}: {'B' if neighbour.state['decision']==1 else 'A'} -> {neighbour.state['utility_gained']} Utility gained."
          for neighbour in neighbours])
     time = context["tick"]
-    hq_chance = context.get("hq_chance", 0.8)
+    hq_chance = context.get("hq_chance", 1)
     prior_b_quality = context.get("prior_b_quality", "You have no prior on whether B is of high or low quality.")
     if time <= 1:
         prompt_template = prompt_network_initial1
@@ -111,7 +111,7 @@ def network_game(_sender: autogen.ConversableAgent,
                             "json_format_string": recipient.knowledge_format}
     else:
         prompt_template = prompt_network_continue1
-        replacement_dict = {"neighbour_decisions": neighbour_decisions_str,
+        replacement_dict = {"neighbour_experiences": neighbour_decisions_str,
                             "utility_gain": recipient.state["utility_gained"],
                             "agent_id": recipient.agent_id}
     prompt = generate_prompt_from_template(replacement_dict, prompt_template)

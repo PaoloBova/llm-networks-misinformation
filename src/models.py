@@ -131,17 +131,17 @@ class TechnologyLearningGame:
         self.graph = networks.init_graph(params)
         
         if params["hq_chance"] > 0.5:
-            self.correct_answer = 'B'
+            self.correct_answer = 1
         else:
-            self.correct_answer = 'A'
+            self.correct_answer = 0
     
     def collect_stats(self, parameters):
         for agent in self.agents:
             self.agent_results.append({
                     'round': self.tick,
                     'agent_id': agent.name,
-                    'decision': agent.knowledge['decision'],
-                    'reasoning': agent.knowledge['reasoning']
+                    'decision': agent.knowledge.get('decision'),
+                    'reasoning': agent.knowledge.get('reasoning')
                 })
 
         correct_count = sum(agent.knowledge['decision'] == self.correct_answer
@@ -173,7 +173,7 @@ class TechnologyLearningGame:
         # Agent gains utility based on their decision
         # It is well known that A gives you 1 utility with 0.5 chance, and 0 otherwise.
         # Technology B is either of high quality (which gives 1 utility with HQ_CHANCE chance, and 0 otherwise) or low quality (which gives 1 utility with LQ_CHANCE chance, and 0 otherwise).
-        hq_chance = parameters.get("hq_chance", 0.8)
+        hq_chance = parameters.get("hq_chance", 1)
         lq_chance = 1 - hq_chance
         if new_decision == 1:
             true_quality = parameters.get("true_quality", 0)
