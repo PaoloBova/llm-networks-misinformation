@@ -41,12 +41,13 @@ def init_agents(params):
 
 def init_adjudicator(params):
     """Initialize and return an adjudicator agent"""
-    names = ['api_key', 'temperature']
-    api_key, temperature = [params[k] for k in names]
-    adjudicator_agent_class = params['adjudicator_agent_class']
-    return adjudicator_agent_class(agent_id=f"adjudicator_{0}",
-                                   api_key=api_key,
-                                   temperature=temperature)
+    spec = params['adjudicator_spec']
+    agent_secrets = params.get('agent_secrets', {})
+    agent_class = spec['agent_class']
+    agent_params = spec.get('agent_params', {})
+    spec_id = spec.get('agent_spec_id', None)
+    secrets = agent_secrets.get(spec_id, {})
+    return agent_class(agent_id=f"adjudicator_{0}", **agent_params, **secrets)
 
 def run(model, parameters):
     print(f"Starting simulation with {len(model.agents)} agents.")
@@ -65,7 +66,7 @@ def run(model, parameters):
 def run_simulation(params):
     """Initialize the agents and model, then run the model."""
     model_class = params['model_class']
-    if params.get('adjudicator_agent_class'):
+    if params.get('adjudicator_spec'):
         params["adjudicator_agent"] = init_adjudicator(params)
     if params.get('agent_specs'):
         agents = init_agents(params)
