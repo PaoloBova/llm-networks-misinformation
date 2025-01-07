@@ -23,15 +23,18 @@ def set_random_seed(seed: int):
 def init_agents(params):
     """Initialize and return a list of agents"""
     agent_specs = params['agent_specs']
+    agent_secrets = params.get('agent_secrets', {})
     agents = []
     for spec in agent_specs:
         agent_class = spec['agent_class']
         num_agents = spec.get('num_agents', 1)
         agent_params = spec.get('agent_params', {})
+        spec_id = spec.get('agent_spec_id', None)
+        secrets = agent_secrets.get(spec_id, {})
         
         for _ in range(num_agents):
             agent_id = len(agents) + 1
-            agent = agent_class(agent_id=agent_id, **agent_params)
+            agent = agent_class(agent_id=agent_id, **agent_params, **secrets)
             agents.append(agent)
 
     return agents
