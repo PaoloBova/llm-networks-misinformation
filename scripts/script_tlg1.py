@@ -23,6 +23,9 @@ current_commit = src.data_utils.get_current_git_commit()
 data_dir = f"data/{simulation_id}"
 plots_dir = f"plots/{simulation_id}"
 
+# Setup logging
+src.data_utils.setup_logging()
+
 # Adjustable parameters
 NUM_AGENTS = 8
 NUM_ROUNDS = 16

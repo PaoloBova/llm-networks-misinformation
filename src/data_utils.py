@@ -14,7 +14,11 @@ import regex
 import subprocess
 from typing import Any, Dict, List
 import uuid
+import logging
 
+def setup_logging(log_file='chat_logs.log', level=logging.INFO):
+    logging.basicConfig(filename=log_file, level=level,
+                        format='%(asctime)s - %(levelname)s - %(message)s')
 
 def is_plain_word(word):
     return word.isalpha()

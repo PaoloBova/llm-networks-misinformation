@@ -1,3 +1,4 @@
+import logging
 import random
 import src.data_utils as data_utils
 import src.networks as networks
@@ -197,7 +198,7 @@ class TechnologyLearningGame:
                 "graph": self.graph}
         adjudicator = self.adjudicator_agent
         prompt = construct_prompt_fn(adjudicator, agent, args)
-        
+        logging.info(f"Prompting agent {agent.name} with: {prompt}")
         chat_result = adjudicator.initiate_chat(
             recipient=agent, 
             message= prompt,
@@ -209,6 +210,8 @@ class TechnologyLearningGame:
         # Extract data from the chat message and update the agent's knowledge.
         data_format = agent.knowledge_format if hasattr(agent, "knowledge_format") else {}
         message = chat_result.chat_history[-1]["content"]
+        logging.info(f"Agent {agent.name} received message: {message}")
+        logging.info(f"Chat result: {chat_result}")
         data = data_utils.extract_data(message, data_format)
         if len(data) >= 1:
             agent.update_knowledge(data[0])
