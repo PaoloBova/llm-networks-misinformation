@@ -128,6 +128,7 @@ class TechnologyLearningGame:
         # to be more consisent with similar models where an adjudicator agent is
         # necessary for evaluating the agents' responses.
         self.adjudicator_agent = params.get("adjudicator_agent")
+        params["num_agents"] = len(agents)
         self.graph = networks.init_graph(params)
         
         if params["hq_chance"] > 0.5:
