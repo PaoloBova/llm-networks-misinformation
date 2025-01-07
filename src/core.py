@@ -5,6 +5,7 @@ import pandas as pd
 import random
 import src.utils as utils
 import src.data_utils as data_utils
+import tqdm
 from typing import Dict
 
 def set_random_seed(seed: int):
@@ -136,7 +137,7 @@ def run_multiple_simulations(params:Dict, secrets:Dict={}) -> Dict:
     # we set the random seeds for the simulation runs.
     simulation_run_ids = [data_utils.create_id()
                           for _ in range(len(params_list))]
-    for i, params in enumerate(params_list):
+    for i, params in tqdm.tqdm(enumerate(params_list)):
         set_random_seed(params['seed'])
         # We keep secrets separate from the rest of the params as we don't want
         # to expose them in the results

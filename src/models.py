@@ -202,7 +202,8 @@ class TechnologyLearningGame:
             recipient=agent, 
             message= prompt,
             max_turns=1,
-            clear_history=False
+            clear_history=False,
+            silent=True,
         )
         
         # Extract data from the chat message and update the agent's knowledge.
