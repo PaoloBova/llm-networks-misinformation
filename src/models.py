@@ -132,7 +132,7 @@ class TechnologyLearningGame:
         params["num_agents"] = len(agents)
         self.graph = networks.init_graph(params)
         
-        if params["hq_chance"] > 0.5:
+        if params.get('hq_chance', 1) > 0.5:
             self.correct_answer = 1
         else:
             self.correct_answer = 0
@@ -172,12 +172,20 @@ class TechnologyLearningGame:
         self.respond_to_system(agent, parameters)
         new_decision = agent.knowledge.get('decision')
         agent.state["decision"] = new_decision
+        
+        # In a variant of this game, we don't compute the utilities
+        # until the end, so here we skip this step.
+        
+        if not parameters.get("compute_utilities_at_end", False):
+            self.compute_utilities(agent, parameters)
+    
+    def compute_utilities(self, agent, parameters):
         # Agent gains utility based on their decision
         # It is well known that A gives you 1 utility with 0.5 chance, and 0 otherwise.
         # Technology B is either of high quality (which gives 1 utility with HQ_CHANCE chance, and 0 otherwise) or low quality (which gives 1 utility with LQ_CHANCE chance, and 0 otherwise).
         hq_chance = parameters.get("hq_chance", 1)
         lq_chance = 1 - hq_chance
-        if new_decision == 1:
+        if agent.state["decision"] == 1:
             true_quality = parameters.get("true_quality", 0)
             chance = hq_chance if true_quality == 1 else lq_chance
             new_utility = random.choices([1, 0], weights=[chance, 1- chance])[0]
