@@ -28,7 +28,7 @@ src.data_utils.setup_logging()
 
 # Adjustable parameters
 NUM_AGENTS = 8
-NUM_ROUNDS = 16
+NUM_ROUNDS = 8
 TEMPERATURE = 0.2  # Adjust this to control the randomness of responses
 prompt_functions = {"baseline_game": prompts.network_game}
 agent_params = {"temperature": TEMPERATURE,
@@ -47,9 +47,9 @@ adjudicator_spec = {"agent_spec_id": "adjudicator",
 params = {"simulation_id": simulation_id,
           "commit": current_commit,
         #   "seed": [303, 606],
-          "seed": [random.randint(0, 1000) for _ in range(20)],
+          "seed": [random.randint(0, 1000) for _ in range(5)],
         #   "network_seed": [639, 639],
-          "network_seed": [random.randint(0, 1000) for _ in range(10)],
+          "network_seed": [random.randint(0, 1000) for _ in range(2)],
           "model_class": TechnologyLearningGame,
           "agent_specs": [agent_specs],
           "adjudicator_spec": adjudicator_spec,
