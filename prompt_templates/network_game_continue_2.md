@@ -1,0 +1,1 @@
+Your recent experience: You (agent {agent_id}) most recently chose {choice_prev} ; Neighbor experiences: {neighbour_experiences}

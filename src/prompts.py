@@ -116,3 +116,39 @@ def network_game(_sender: autogen.ConversableAgent,
                             "agent_id": recipient.agent_id}
     prompt = generate_prompt_from_template(replacement_dict, prompt_template)
     return {"role": role, "content": prompt}
+
+
+# Read prompt template from file
+with open("prompt_templates/network_game_2.md", 'r') as file:
+    prompt_network_initial2 = file.read()
+
+# Read prompt template from file
+with open("prompt_templates/network_game_continue_2.md", 'r') as file:
+    prompt_network_continue2 = file.read()
+
+def network_game2(_sender: autogen.ConversableAgent,
+                  recipient: autogen.ConversableAgent,
+                  context: Dict) -> Dict:
+    role = context.get("role", "system")
+    graph = context["graph"]
+    agents = context["agents"]
+    neighbour_ids = list(graph.neighbors(recipient.agent_id - 1))
+    neighbours = [agent for agent in agents if agent.agent_id - 1 in neighbour_ids]
+    # Neighbour decisions should be represented as as a string in the form:
+    # Neighbour {agent_id}: {decision}.
+    neighbour_decisions_str = "\n".join(
+        [f"Neighbour {neighbour.agent_id}: {'B' if neighbour.state['decision']==1 else 'A'}."
+         for neighbour in neighbours])
+    time = context["tick"]
+    prior_b_quality = recipient.get("prior_b_quality", "You have no prior on whether B is of high or low quality.")
+    if time <= 1:
+        prompt_template = prompt_network_initial1
+        replacement_dict = {"prior_b_quality": prior_b_quality,
+                            "json_format_string": recipient.knowledge_format}
+    else:
+        prompt_template = prompt_network_continue1
+        replacement_dict = {"neighbour_experiences": neighbour_decisions_str,
+                            "prev_choice": recipient.state["decision"],
+                            "agent_id": recipient.agent_id}
+    prompt = generate_prompt_from_template(replacement_dict, prompt_template)
+    return {"role": role, "content": prompt}
