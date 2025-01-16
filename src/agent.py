@@ -25,6 +25,7 @@ class NetworkAgent(autogen.ConversableAgent):
                  knowledge_format={"reasoning": str, "decision": int},
                  state={}):
         super().__init__(name=str(agent_id),
+                         human_input_mode="NEVER",
                          llm_config={"model": model,
                                      "api_key": api_key,
                                      "response_format": {"type": "json_object"},
