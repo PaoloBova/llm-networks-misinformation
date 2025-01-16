@@ -139,16 +139,19 @@ def network_game2(_sender: autogen.ConversableAgent,
     neighbour_decisions_str = "\n".join(
         [f"Neighbour {neighbour.agent_id}: {'B' if neighbour.state['decision']==1 else 'A'}."
          for neighbour in neighbours])
+    choice_prev = 'B' if recipient.state['decision']==1 else 'A'
     time = context["tick"]
-    prior_b_quality = recipient.get("prior_b_quality", "You have no prior on whether B is of high or low quality.")
+    prior_b_quality = recipient.state.get("prior_b_quality", "You have no prior on whether B is of high or low quality.")
     if time <= 1:
-        prompt_template = prompt_network_initial1
+        prompt_template = prompt_network_initial2
         replacement_dict = {"prior_b_quality": prior_b_quality,
+                            "neighbour_experiences": neighbour_decisions_str,
+                            "choice_prev": choice_prev,
                             "json_format_string": recipient.knowledge_format}
     else:
-        prompt_template = prompt_network_continue1
+        prompt_template = prompt_network_continue2
         replacement_dict = {"neighbour_experiences": neighbour_decisions_str,
-                            "prev_choice": recipient.state["decision"],
+                            "choice_prev": choice_prev,
                             "agent_id": recipient.agent_id}
     prompt = generate_prompt_from_template(replacement_dict, prompt_template)
     return {"role": role, "content": prompt}
