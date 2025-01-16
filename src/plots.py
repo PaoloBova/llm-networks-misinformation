@@ -34,17 +34,23 @@ def plot_metric_against_topology(data,
                                             metric=metric,
                                             var=var,
                                             group_var=group_var,
-                                            legend=None,
+                                            legend="auto",
                                             plot_type='line',
                                             marker='o',
                                             linestyle='-',
                                             color='lightcoral',
+                                            mute_colors=True,
                                             alpha=0.5,
                                             title=title,
                                             xlabel=var,
                                             ylabel='% Correct',
                                             ylim=None)
     
+    # Calculate and plot the mean result for each round across all simulations
+    mean_results = df.groupby('round')[metric].mean()
+    ax = fig.gca()
+    ax.plot(mean_results.index, mean_results, marker='o', linestyle='-', color='orangered', label='Mean Proportion')
+    ax.legend()
     return fig
 
 def plot_royal_family_network(G):
