@@ -69,6 +69,11 @@ import networkx as nx
 import random
 import src.utils
 
+def compute_average_degree(graph):
+    degrees = [d for n, d in graph.degree()]
+    average_degree = np.mean(degrees)
+    return average_degree
+
 def compute_avg_path_length(graph):
     """Compute the average path length of a graph.
     
