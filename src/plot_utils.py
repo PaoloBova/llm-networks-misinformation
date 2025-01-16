@@ -51,6 +51,7 @@ def plot_metric_against_var(df,
                             marker='o',
                             linestyle='-',
                             color='lightcoral',
+                            mute_colors=False,
                             alpha=0.5,
                             title='Title',
                             xlabel='X Label',
@@ -81,9 +82,14 @@ def plot_metric_against_var(df,
             # If no group_var is provided, plot a single line
             if group_var is not None:
                 unique_groups = df[group_var].unique()
-                colors = cm.rainbow(np.linspace(0, 1, len(unique_groups)))
+                if mute_colors:
+                    colors = ['lightcoral'] * len(unique_groups)
+                else:
+                    colors = cm.rainbow(np.linspace(0, 1, len(unique_groups)))
                 for i, group in enumerate(unique_groups):
                     group_df = df[df[group_var] == group]
+                    # Sort group_df by var
+                    group_df = group_df.sort_values(by=var)
                     ax.plot(group_df[var], group_df[metric], marker=marker, linestyle=linestyle, color=colors[i], alpha=alpha, label=group)
             else:
                 ax.plot(df[var], df[metric], marker=marker, linestyle=linestyle, color=color, alpha=alpha)
