@@ -154,9 +154,23 @@ def save_name(params,
 def serialize_graphs(graphs):
     """Serialize a dictionary of NetworkX graphs to a JSON-serializable format."""
     serialized_graphs = {}
+    logging.info(f"graphs: {graphs}")
     for key, graph in graphs.items():
-        serialized_graph = networkx.node_link_data(graph)
+        # Convert node labels to integers
+        G = networkx.convert_node_labels_to_integers(graph)
+
+        # Convert attributes (e.g. block) to native Python int
+        for node, data in G.nodes(data=True):
+          if 'block' in data:
+            data['block'] = int(data['block'])
+        if 'partition' in G.graph:
+            G.graph['partition'] = [list(s) for s in G.graph['partition']]
+
+        serialized_graph = networkx.adjacency_data(G)
         serialized_graphs[key] = serialized_graph
+        
+    logging.info(f"Serialized {len(serialized_graphs)} graphs")
+    logging.info(f"Serialized graphs: {serialized_graphs}")
     return serialized_graphs
 
 import json
