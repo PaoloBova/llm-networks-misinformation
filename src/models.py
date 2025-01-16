@@ -159,7 +159,7 @@ class TechnologyLearningGame:
                     'correct_proportion': correct_count / len(self.agents),
                     'misinformed_agent_ids': misinformed_agent_ids,
                 })
-        print(f"Correct answers: {correct_count}/{len(self.agents)}.")
+        logging.info(f"Correct answers: {correct_count}/{len(self.agents)}.")
             
     def step(self, parameters):
         self.tick += 1
@@ -219,7 +219,6 @@ class TechnologyLearningGame:
         data_format = agent.knowledge_format if hasattr(agent, "knowledge_format") else {}
         message = chat_result.chat_history[-1]["content"]
         logging.info(f"Agent {agent.name} received message: {message}")
-        logging.info(f"Chat result: {chat_result}")
         data = data_utils.extract_data(message, data_format)
         if len(data) >= 1:
             agent.update_knowledge(data[0])
