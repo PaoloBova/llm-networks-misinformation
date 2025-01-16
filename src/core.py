@@ -136,8 +136,8 @@ def run_multiple_simulations(params:Dict, secrets:Dict={}) -> Dict:
 
     # We need to create the random ids for each simulation run before
     # we set the random seeds for the simulation runs.
-    simulation_run_ids = [data_utils.create_id()
-                          for _ in range(len(params_list))]
+    params_list = [{**params, "simulation_run_id": data_utils.create_id()}
+                   for params in params_list]
     for i, params in tqdm.tqdm(enumerate(params_list)):
         set_random_seed(params['seed'])
         # We keep secrets separate from the rest of the params as we don't want
@@ -145,7 +145,7 @@ def run_multiple_simulations(params:Dict, secrets:Dict={}) -> Dict:
         args = {**params, **secrets}
         model, agent_results, model_results = run_simulation(args)
         # Add columns to identify the simulation id, run, and run id
-        simulation_run_id = simulation_run_ids[i]
+        simulation_run_id = params["simulation_run_id"]
         for res in agent_results:
             res['simulation_id'] = simulation_id
             res['simulation_run'] = i + 1
@@ -196,7 +196,7 @@ def paramscan(params:Dict,
     params_list = utils.dict_list(params) if isinstance(params, dict) else params
     # Assert that params is a list of dictionaries
     assert all(isinstance(params, dict) for params in params_list)
-    logging.info("Number of simulations: ", len(params_list))
+    logging.info(f"Number of simulations: {len(params_list)}")
 
     agent_results_all = []
     model_results_all = []
@@ -209,8 +209,8 @@ def paramscan(params:Dict,
 
     # We need to create the random ids for each simulation run before
     # we set the random seeds for the simulation runs.
-    simulation_run_ids = [data_utils.create_id()
-                          for _ in range(len(params_list))]
+    params_list = [{**params, "simulation_run_id": data_utils.create_id()}
+                   for params in params_list]
     for i, params in enumerate(params_list):
         set_random_seed(params['seed'])
         # We keep secrets separate from the rest of the params as we don't want
@@ -218,7 +218,7 @@ def paramscan(params:Dict,
         args = {**params, **secrets}
         _model, agent_results, model_results = run_simulation(args)
         # Add columns to identify the simulation id, run, and run id
-        simulation_run_id = simulation_run_ids[i]
+        simulation_run_id = params["simulation_run_id"]
         for res in agent_results:
             res['simulation_id'] = simulation_id
             res['simulation_run'] = i + 1
