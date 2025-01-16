@@ -173,8 +173,6 @@ def serialize_graphs(graphs):
     logging.info(f"Serialized graphs: {serialized_graphs}")
     return serialized_graphs
 
-import json
-
 def filter_dict_for_json(d):
     """
     Recursively filter out values from a dictionary that cannot be serialized to JSON.
