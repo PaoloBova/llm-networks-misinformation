@@ -20,7 +20,7 @@ class NetworkAgent(autogen.ConversableAgent):
                  agent_id,
                  api_key,
                  temperature,
-                 model="gpt-3.5-turbo",
+                 model="gpt-4o-mini-2024-07-18",
                  knowledge=None,
                  knowledge_format={"reasoning": str, "decision": int},
                  state={}):
