@@ -2,6 +2,7 @@ import datetime
 import hashlib
 import json
 import os
+from matplotlib.animation import FuncAnimation
 import matplotlib.pyplot as plt
 import numpy as np
 import networkx
@@ -279,6 +280,11 @@ def save_plots(plots, plots_dir=None):
         elif isinstance(plot, go.Figure):
             filepath = os.path.join(plots_dir, f'{filename_stub}.html')
             pio.write_html(plot, filepath)
+            print(f"Saved file: {filepath}")
+        elif isinstance(plot, FuncAnimation):
+            # This is a matplotlib animation. Save it as a GIF file
+            filepath = os.path.join(plots_dir, f'{filename_stub}.gif')
+            plot.save(filepath, writer='imagemagick')
             print(f"Saved file: {filepath}")
 
 def extract_data(message: str, data_format: Dict[str, type]) -> List[Dict[str, Any]]:
