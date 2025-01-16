@@ -148,6 +148,25 @@ class TechnologyLearningGame:
 
         correct_count = sum(agent.knowledge['decision'] == self.correct_answer
                             for agent in self.agents)
+        # Score how correct/incorrect the consenus among the agents is
+        n0 = parameters["initial_share_correct"]
+        n = parameters["num_agents"]
+        nt = correct_count
+        assert n > 0
+        if n == n0:
+            ct = nt / n
+            logging.warning("All agents have the same initial decision.")
+        elif n0 == 0:
+            ct = nt / n
+            logging.warning("No agents have the correct initial decision.")
+        else:
+            ct = (nt - n0) / (n - n0) if nt >= n0 else (nt - n0) / n0
+        # Record the proportion of agents who switched decisions
+        if self.tick == 0:
+            switch_rate = 0
+        else:
+            switch_rate = sum(agent.state['decision_old'] != agent.state['decision']
+                              for agent in self.agents) / len(self.agents)
         correct_agent_ids = [agent.agent_id for agent in self.agents
                              if agent.knowledge['decision'] == self.correct_answer]
         misinformed_agent_ids = [agent.agent_id for agent in self.agents
@@ -157,6 +176,8 @@ class TechnologyLearningGame:
                     'correct_count': correct_count,
                     'correct_agent_ids': correct_agent_ids,
                     'correct_proportion': correct_count / len(self.agents),
+                    'consensus_score': ct,
+                    'switch_rate': switch_rate,
                     'misinformed_agent_ids': misinformed_agent_ids,
                 })
         logging.info(f"Correct answers: {correct_count}/{len(self.agents)}.")
@@ -171,6 +192,7 @@ class TechnologyLearningGame:
     def agent_step(self, agent, parameters):
         self.respond_to_system(agent, parameters)
         new_decision = agent.knowledge.get('decision')
+        agent.state["decision_old"] = agent.state.get("decision")
         agent.state["decision"] = new_decision
         
         # In a variant of this game, we don't compute the utilities
