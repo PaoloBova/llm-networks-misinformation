@@ -43,7 +43,7 @@ def plot_metric_against_topology(data,
                                             alpha=0.5,
                                             title=title,
                                             xlabel=var,
-                                            ylabel='% Correct',
+                                            ylabel=metric,
                                             ylim=None)
     
     # Calculate and plot the mean result for each round across all simulations
