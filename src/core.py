@@ -1,5 +1,6 @@
 import autogen
 import collections
+import logging
 import numpy as np
 import pandas as pd
 import random
@@ -51,16 +52,16 @@ def init_adjudicator(params):
     return agent_class(agent_id=f"adjudicator_{0}", **agent_params, **secrets)
 
 def run(model, parameters):
-    print(f"Starting simulation with {len(model.agents)} agents.")
+    logging.info(f"Starting simulation with {len(model.agents)} agents.")
     
     model.collect_stats(parameters)
     for _ in range(model.num_rounds):
-        print(f"Round {model.tick} begins.")
+        logging.info(f"Round {model.tick} begins.")
         model.step(parameters)
         #TODO: Allow more flexibility in when to collect what.
         model.collect_stats(parameters)
-        print(f"Round {model.tick} ends.")
-        print("-" * 50)
+        logging.info(f"Round {model.tick} ends.")
+        logging.info("-" * 50)
 
     return model.agent_results, model.model_results
     
@@ -119,7 +120,7 @@ def run_multiple_simulations(params:Dict, secrets:Dict={}) -> Dict:
     params_list = utils.dict_list(params) if isinstance(params, dict) else params
     # Assert that params is a list of dictionaries
     assert all(isinstance(params, dict) for params in params_list)
-    print("Number of simulations: ", len(params_list))
+    logging.info("Number of simulations: ", len(params_list))
 
     agent_results_all = []
     model_results_all = []
@@ -195,7 +196,7 @@ def paramscan(params:Dict,
     params_list = utils.dict_list(params) if isinstance(params, dict) else params
     # Assert that params is a list of dictionaries
     assert all(isinstance(params, dict) for params in params_list)
-    print("Number of simulations: ", len(params_list))
+    logging.info("Number of simulations: ", len(params_list))
 
     agent_results_all = []
     model_results_all = []
