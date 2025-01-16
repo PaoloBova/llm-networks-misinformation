@@ -9,4 +9,5 @@ When prompted, your response should follow exactly the following JSON structure:
 When giving the response in the above format, note that Technology A should be represented as 0 and Technology B should be represented as 1.
 In future, I will only send you relevant new information. 
 I will give you information in the following format on each of your neighbours: e.g. Neighbor 1: A; Neighbor 2: B
-Let us begin: Which technology do you choose, A or B?
+Your recent experience: You (agent {agent_id}) most recently chose {choice_prev} ; Neighbor experiences: {neighbour_experiences}
+Let us begin: Which technology do you choose, 0 or 1?
