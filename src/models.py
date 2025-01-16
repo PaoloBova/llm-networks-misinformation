@@ -138,6 +138,7 @@ class TechnologyLearningGame:
             self.correct_answer = 0
     
     def collect_stats(self, parameters):
+        agent_result_prev = self.agent_results[-len(self.agents):]
         for agent in self.agents:
             self.agent_results.append({
                     'round': self.tick,
@@ -162,11 +163,13 @@ class TechnologyLearningGame:
         else:
             ct = (nt - n0) / (n - n0) if nt >= n0 else (nt - n0) / n0
         # Record the proportion of agents who switched decisions
+        decisions_old = [r['decision'] for r in agent_result_prev]
+        decisions_new = [agent.knowledge['decision'] for agent in self.agents]
+        switches =  [i != j for i, j in zip(decisions_old, decisions_new)]
         if self.tick == 0:
-            switch_rate = 0
+            switch_rate = None
         else:
-            switch_rate = sum(agent.state['decision_old'] != agent.state['decision']
-                              for agent in self.agents) / len(self.agents)
+            switch_rate = sum(switches) / len(self.agents)
         correct_agent_ids = [agent.agent_id for agent in self.agents
                              if agent.knowledge['decision'] == self.correct_answer]
         misinformed_agent_ids = [agent.agent_id for agent in self.agents
