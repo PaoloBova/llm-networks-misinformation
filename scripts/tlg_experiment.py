@@ -82,6 +82,9 @@ params = {"simulation_id": simulation_id,
           "sbm_sizes": [[NUM_AGENTS // NUM_BLOCKS for _ in range(NUM_BLOCKS)]],
           "sbm_p": 0.8,
           "sbm_q": 0.025,
+          "royal_family_size": 3,
+          "royal_family_local_neighbors": 2,
+          "er_graph_p": 0.1,
           "ensure_connected": "augment"}
 
 # Run and save simulations
