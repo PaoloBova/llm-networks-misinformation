@@ -1,7 +1,9 @@
 # Use this python file to write plotting functions to call in our scripts.
 # Always name plotting functions after what they plot.
+import logging
 import math
 from matplotlib.animation import FuncAnimation
+from matplotlib.collections import PathCollection
 import matplotlib.pyplot as plt
 import networkx
 import numpy
@@ -52,6 +54,34 @@ def plot_metric_against_topology(data,
     ax.plot(mean_results.index, mean_results, marker='o', linestyle='-', color='orangered', label='Mean Proportion')
     ax.legend()
     return fig
+
+def extract_node_data(ax, pos):
+    """
+    Extract node data from a matplotlib axis.
+    
+    Parameters:
+    - ax: matplotlib axis. The axis containing the nodes.
+    - pos: dict. A dictionary mapping node IDs to positions.
+    
+    Returns:
+    - List of tuples. Each tuple contains a node index and a PathCollection object.
+    """
+    node_collections = [artist for artist in ax.get_children()
+                        if (isinstance(artist, PathCollection)
+                            and artist.get_offsets().size > 0)]
+    node_offsets = [tuple(a.get_offsets().data) for a in node_collections]
+    pos_to_index = {tuple(v): k for k, v in pos.items()}
+    
+    tol = 1e-4
+    def find_closest_index(offset):
+        for pos, index in pos_to_index.items():
+            if numpy.allclose(pos, offset, atol=tol):
+                return index
+        raise KeyError(f"Position {offset} not found in pos_to_index")
+    
+    node_indices = [[find_closest_index(o) for o in offsets] for offsets in node_offsets]
+    node_data = list(zip(node_indices, node_collections))
+    return node_data
 
 def plot_royal_family_network(G):
     """
@@ -110,45 +140,47 @@ def plot_royal_family_network(G):
     # Draw local neighborhood connections
     local_edges = [(u, v) for (u, v) in G.edges() 
                    if u >= royal_family_size and v >= royal_family_size]
-    networkx.draw_networkx_edges(G, pos, edgelist=local_edges,
+    networkx.draw_networkx_edges(G, pos, edgelist=local_edges, ax=ax,
                            alpha=0.3, edge_color='blue')
     
     # Draw connections to royal family
     royal_edges = [(u, v) for (u, v) in G.edges() 
                    if ((u >= royal_family_size and v < royal_family_size)
                        or (u < royal_family_size and v >= royal_family_size))]
-    networkx.draw_networkx_edges(G, pos, edgelist=royal_edges,
+    networkx.draw_networkx_edges(G, pos, edgelist=royal_edges, ax=ax,
                            alpha=0.1, edge_color='red')
     
     # Draw royal family connections
     rf_edges = [(u, v) for (u, v) in G.edges() 
                 if u < royal_family_size and v < royal_family_size]
-    networkx.draw_networkx_edges(G, pos, edgelist=rf_edges, 
+    networkx.draw_networkx_edges(G, pos, edgelist=rf_edges, ax=ax,
                           alpha=0.5, edge_color='purple', arrows=True, arrowsize=10)
     
     # Draw nodes
-    networkx.draw_networkx_nodes(G, pos, 
+    networkx.draw_networkx_nodes(G, pos, ax=ax,
                           nodelist=range(royal_family_size, len(G.nodes())),
                           node_color='lightblue',
                           node_size=100)
     
-    networkx.draw_networkx_nodes(G, pos,
+    networkx.draw_networkx_nodes(G, pos, ax=ax,
                           nodelist=range(royal_family_size),
                           node_color='red',
                           node_size=300)
     
-    plt.title("Royal Family Network")
-    plt.axis('equal')
-    plt.axis('off')
+    ax.set_title("Royal Family Network")
+    ax.set_aspect('equal')
+    ax.axis('off')
     
     # Add legend
-    plt.plot([], [], 'ro', markersize=10, label='Royal Family')
-    plt.plot([], [], 'o', color='lightblue', markersize=7, label='Regular Nodes')
-    plt.plot([], [], color='purple', alpha=0.5, label='Royal Family Connections')
-    plt.plot([], [], color='red', alpha=0.3, label='Connections to Royal Family')
-    plt.plot([], [], color='blue', alpha=0.3, label='Local Neighborhood Connections')
-    plt.legend(loc='upper right')
-    return {"pos": pos, "network": G, "plot": fig, "ax": ax}
+    ax.plot([], [], 'ro', markersize=10, label='Royal Family')
+    ax.plot([], [], 'o', color='lightblue', markersize=7, label='Regular Nodes')
+    ax.plot([], [], color='purple', alpha=0.5, label='Royal Family Connections')
+    ax.plot([], [], color='red', alpha=0.3, label='Connections to Royal Family')
+    ax.plot([], [], color='blue', alpha=0.3, label='Local Neighborhood Connections')
+    ax.legend(loc='upper right')
+
+    return {"pos": pos, "network": G, "plot": fig, "ax": ax,
+            "node_data":  extract_node_data(ax, pos)}
 
 def plot_sbm(G, ring_scale=5.0, sub_scale=2.0, node_size=100):
     """
@@ -206,7 +238,8 @@ def plot_sbm(G, ring_scale=5.0, sub_scale=2.0, node_size=100):
     fig, ax = plt.subplots(figsize=(15, 15))
     networkx.draw(G, pos=pos, node_color=colors, cmap=plt.cm.Set3, 
             with_labels=False, node_size=node_size)
-    return {"pos": pos, "colors": colors, "network": G, "plot": fig, "ax": ax}
+    return {"pos": pos, "colors": colors, "network": G, "plot": fig, "ax": ax,
+            "node_data": extract_node_data(ax, pos)}
 
 def plot_network_default(G,
                          pos=None,
@@ -233,7 +266,8 @@ def plot_network_default(G,
         pos = networkx.spring_layout(G)
     networkx.draw(G, pos=pos, with_labels=False, node_size=node_size,
                   node_color=node_color, edge_color=edge_color, alpha=edge_alpha)
-    return {"pos": pos, "plot": fig, "ax": ax}
+    return {"pos": pos, "plot": fig, "ax": ax,
+            "node_data": extract_node_data(ax, pos)}
 
 @utils.multi
 def plot_network(params, **kwargs):
@@ -284,7 +318,7 @@ def animate_graph(graph_args, df, column_map={}, color_map={}, interval=1000):
     if G is None:
         return {}
     fig_data = plot_network(graph_args)
-    pos = fig_data['pos']
+    node_data = fig_data['node_data']
     fig = fig_data['plot']
     ax = fig_data['ax']
     
@@ -298,10 +332,14 @@ def animate_graph(graph_args, df, column_map={}, color_map={}, interval=1000):
                                for _, row in group.iterrows()}
     
     def update(frame):
-        ax.clear()
-        colors = [frame_colors[frame].get(str(n+1), 'gray') for n in G.nodes()]
-        networkx.draw_networkx_edges(G, pos, ax=ax)
-        networkx.draw_networkx_nodes(G, pos, ax=ax, node_color=colors, node_size=100)
+        # ax.clear()
+        # Update node colors only
+        logging.info(f"Updating frame {frame}")
+        logging.info(f"Colors: {frame_colors[frame]}")
+        logging.info(f"Node data: {node_data}")
+        for nodes, collection in node_data:
+            colors = [frame_colors[frame].get(str(n+1), 'gray') for n in nodes]
+            collection.set_color(colors)
         ax.set_title(f"Time step {frame}")
 
     ani = FuncAnimation(fig, update, frames=sorted(frame_colors.keys()), interval=interval, repeat=True)
