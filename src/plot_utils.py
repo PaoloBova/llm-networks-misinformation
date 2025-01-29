@@ -88,9 +88,13 @@ def plot_metric_against_var(df,
                     colors = cm.rainbow(np.linspace(0, 1, len(unique_groups)))
                 for i, group in enumerate(unique_groups):
                     group_df = df[df[group_var] == group]
+                    if len(unique_groups) > 10:
+                        group_label= f"{group_var}_batch"
+                    else:
+                        group_label = group
                     # Sort group_df by var
                     group_df = group_df.sort_values(by=var)
-                    ax.plot(group_df[var], group_df[metric], marker=marker, linestyle=linestyle, color=colors[i], alpha=alpha, label=group)
+                    ax.plot(group_df[var], group_df[metric], marker=marker, linestyle=linestyle, color=colors[i], alpha=alpha, label=group_label)
             else:
                 ax.plot(df[var], df[metric], marker=marker, linestyle=linestyle, color=color, alpha=alpha)
         else:
