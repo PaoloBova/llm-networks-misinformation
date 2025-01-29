@@ -27,6 +27,8 @@ def init_agents(params):
     agent_specs = params['agent_specs']
     agent_secrets = params.get('agent_secrets', {})
     agents = []
+    # Randomise order of agent specs to avoid any implicit ordering
+    random.shuffle(agent_specs)
     for spec in agent_specs:
         agent_class = spec['agent_class']
         num_agents = spec.get('num_agents', 1)
