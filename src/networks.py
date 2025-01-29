@@ -52,7 +52,6 @@ def init_graph(params):
                           for i in range(len(sizes))]
     
     nodelist = list(range(total_size))
-    numpy.random.shuffle(nodelist)
 
     # Generate the SBM graph
     graph = networkx.stochastic_block_model(sizes,
