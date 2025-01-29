@@ -34,7 +34,7 @@ src.data_utils.setup_logging()
 NUM_AGENTS = 40
 NUM_ROUNDS = 12
 TEMPERATURE = 0.2  # Adjust this to control the randomness of responses
-NUM_BLOCKS = 8
+NUM_BLOCKS = 8 # Only used for SBM
 P_CORRECT = 0.7 # Probability of correct initial decision
 prompt_functions = {"baseline_game": prompts.network_game2}
 agent_params = {"temperature": TEMPERATURE,
@@ -65,9 +65,11 @@ adjudicator_spec = {"agent_spec_id": "adjudicator",
                     "agent_params": {"temperature": TEMPERATURE}}
 params = {"simulation_id": simulation_id,
           "commit": current_commit,
-          "seed": [303, 279],
+          # "seed": [303, 279],
+          "seed": [303, 279, 843, 221, 919, 732],
           # "seed": [random.randint(0, 1000) for _ in range(1)],
-          "network_seed": [639, 453],
+          "network_seed": [639, 453, 432, 138],
+          # "network_seed": [639, 453],
           # "network_seed": [random.randint(0, 1000) for _ in range(1)],
           "model_class": TechnologyLearningGame,
           "agent_specs": [agent_specs],
@@ -77,11 +79,11 @@ params = {"simulation_id": simulation_id,
           "prompt_functions": prompt_functions,
           "initial_share_correct": P_CORRECT,
           "compute_utilities_at_end": True,
-          "src.networks.init_graph_type": "royal_family_graph",
+          "src.networks.init_graph_type": "stochastic_block_model",
           "sbm_num_blocks": NUM_BLOCKS,
           "sbm_sizes": [[NUM_AGENTS // NUM_BLOCKS for _ in range(NUM_BLOCKS)]],
           "sbm_p": 0.8,
-          "sbm_q": 0.025,
+          "sbm_q": 0.01,
           "royal_family_size": 3,
           "royal_family_local_neighbors": 2,
           "er_graph_p": 0.1,

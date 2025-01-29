@@ -27,6 +27,7 @@ class NetworkAgent(autogen.ConversableAgent):
         super().__init__(name=str(agent_id),
                          human_input_mode="NEVER",
                          llm_config={"model": model,
+                                     "cache_seed": None,
                                      "api_key": api_key,
                                      "response_format": {"type": "json_object"},
                                      "temperature": temperature})
