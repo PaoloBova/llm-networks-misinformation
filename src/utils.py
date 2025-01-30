@@ -7,7 +7,6 @@ import time
 from typing import Any, Dict, Generator, Sequence, List, Optional, Tuple, Union, Iterable
 import warnings
 
-
 def dict_values_are_scalar(dictionary):
     return all(not isinstance(v, Iterable)
                or isinstance(v, str) for v in dictionary.values())
@@ -243,6 +242,8 @@ def expand_parameters(params: Dict[str, Any],
     This function takes a dictionary of parameters and expands specified parameters
     into numpy arrays, creating all combinations of their values. It supports
     nested structures, provides verbose logging, and handles repeat values.
+    
+    This is useful when a model runs an array of simulations in a single run.
 
     Args:
         params (Dict[str, Any]): A dictionary of parameter names and their values.
@@ -313,7 +314,7 @@ def expand_parameters(params: Dict[str, Any],
         if drop_repeats:
             unique_arr = numpy.unique(arr)
             if unique_arr.size != arr.size and verbose:
-                logger.info(f"Repeat values dropped at {' -> '.join(map(str, keypath))}. Original: {arr}, Unique: {unique_arr}")
+                logging.info(f"Repeat values dropped at {' -> '.join(map(str, keypath))}. Original: {arr}, Unique: {unique_arr}")
             arr = unique_arr
         elif numpy.unique(arr).size != arr.size:
             warnings.warn(f"Repeat values found at {' -> '.join(map(str, keypath))}. Consider using drop_repeats=True if this is unintended.")
@@ -331,16 +332,16 @@ def expand_parameters(params: Dict[str, Any],
                       if keypath not in expand_keys]
 
         if len(candidates) > 0:
-            logger.info("Potential missing expansion candidates:")
+            logging.info("Potential missing expansion candidates:")
             for keypath, arr_shape in candidates:
                 if keypath not in expand_keys:
-                    logger.info(f"  {' -> '.join(map(str, keypath))}, shape: {arr_shape}")
+                    logging.info(f"  {' -> '.join(map(str, keypath))}, shape: {arr_shape}")
 
         if skipped_keypaths:
-            logger.info(f"The following keypaths were skipped as they are not expandable: {skipped_keypaths}")
-        logger.info(f"Expanding the following keypaths: {expand_keypaths}")
+            logging.info(f"The following keypaths were skipped as they are not expandable: {skipped_keypaths}")
+        logging.info(f"Expanding the following keypaths: {expand_keypaths}")
 
-        logger.info(f"Number of rows in the expanded arrays: {num_combinations}")
+        logging.info(f"Number of rows in the expanded arrays: {num_combinations}")
 
     # Check if the size exceeds the threshold
     if num_combinations > size_limit:
@@ -362,7 +363,7 @@ def expand_parameters(params: Dict[str, Any],
     # Calculate elapsed time
     elapsed_time = end_time - start_time
     if verbose:
-         logger.info((f"Time taken: {elapsed_time:.6f} seconds"))
+         logging.info((f"Time taken: {elapsed_time:.6f} seconds"))
 
     # Create expanded arrays
     expanded_params = params.copy()  # Create a copy to avoid modifying the original
