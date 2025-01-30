@@ -222,9 +222,24 @@ def filter_dict_for_json(d):
 
     return filtered_dict
 
-def save_data(data, data_dir=None):
+def append_data(data, file_path, format='csv'):
+    if format == 'csv':
+        file_exists = os.path.isfile(file_path)
+        data.to_csv(file_path, mode='a', header=not file_exists, index=False)
+    elif format == 'hdf5':
+        with pd.HDFStore(file_path, mode='a') as store:
+            store.append('my_key', data, format='table', data_columns=True)
+    else:
+        raise ValueError("Unsupported format")
+    
+def save_data(data, data_dir=None, append=False):
     """
     Save each dataframe in `data` to the given folder. 
+    
+    Parameters:
+    - data: A dictionary where the keys are the names of the files and the values are the dataframes to save.
+    - data_dir: The directory to save the data in. If not provided, a random directory will be generated.
+    - append: If True, append the data to the existing file. If False, overwrite the file.
     
     Usage:
     ```{python}
@@ -238,23 +253,30 @@ def save_data(data, data_dir=None):
     # Create the folder if it doesn't exist
     if not os.path.exists(data_dir):
         os.makedirs(data_dir)
-    print("Saving data to:", data_dir)
+    logging.info("Saving data to:", data_dir)
 
     # Iterate over the items in the dictionary
     for key, value in data.items():
-        # If the value is a DataFrame, save it as a CSV file
+        csv_path = os.path.join(data_dir, f'{key}.csv')
+        json_path = os.path.join(data_dir, f'{key}.json')
+
+        # DataFrame -> CSV
         if isinstance(value, pd.DataFrame):
-            value.to_csv(os.path.join(data_dir, f'{key}.csv'), index=False)
+            if append and os.path.isfile(csv_path):
+                value.to_csv(csv_path, mode='a', header=False, index=False)
+            else:
+                value.to_csv(csv_path, index=False)
+
         # If the value is a dictionary of networkx graphs, save it as a JSON file
         elif isinstance(value, dict) and all(isinstance(graph, networkx.Graph)
                                              for graph in value.values()):
             serialized_graphs = serialize_graphs(value)
-            with open(os.path.join(data_dir, f'{key}.json'), 'w') as f:
+            with open(json_path, 'w') as f:
                 json.dump(serialized_graphs, f)
         # If the value is a dictionary or list of dictionaries, save it as a
         # JSON file
         elif isinstance(value, (dict, list)):
-            with open(os.path.join(data_dir, f'{key}.json'), 'w') as f:
+            with open(json_path, 'w') as f:
                 json.dump(value, f)
 
 def save_chunk(filepaths, chunk, filepath_key):
