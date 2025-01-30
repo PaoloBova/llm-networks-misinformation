@@ -231,7 +231,19 @@ def append_data(data, file_path, format='csv'):
             store.append('my_key', data, format='table', data_columns=True)
     else:
         raise ValueError("Unsupported format")
-    
+
+def append_ndjson(record, file_path):
+    with open(file_path, 'a') as f:
+        f.write(json.dumps(record))
+        f.write('\n')
+
+def read_ndjson(file_path):
+    results = []
+    with open(file_path, 'r') as f:
+        for line in f:
+            results.append(json.loads(line))
+    return results
+
 def save_data(data, data_dir=None, append=False):
     """
     Save each dataframe in `data` to the given folder. 
@@ -271,13 +283,19 @@ def save_data(data, data_dir=None, append=False):
         elif isinstance(value, dict) and all(isinstance(graph, networkx.Graph)
                                              for graph in value.values()):
             serialized_graphs = serialize_graphs(value)
-            with open(json_path, 'w') as f:
-                json.dump(serialized_graphs, f)
+            if append and os.path.isfile(json_path):
+                append_ndjson(serialized_graphs, json_path)
+            else:
+                with open(json_path, 'w') as f:
+                    json.dump(serialized_graphs, f)
         # If the value is a dictionary or list of dictionaries, save it as a
         # JSON file
         elif isinstance(value, (dict, list)):
-            with open(json_path, 'w') as f:
-                json.dump(value, f)
+            if append and os.path.isfile(json_path):
+                append_ndjson(serialized_graphs, json_path)
+            else:
+                with open(json_path, 'w') as f:
+                    json.dump(value, f)
 
 def save_chunk(filepaths, chunk, filepath_key):
     """Save a single chunk of data to an HDF5 file, appending if the file exists."""
