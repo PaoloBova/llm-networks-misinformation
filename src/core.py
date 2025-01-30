@@ -268,6 +268,9 @@ def run_sims_online(params:Union[Dict, List[Dict]],
             for k in model_results_all[0].keys():
                 model_results_new[k] = np.hstack([d[k] for d in model_results_all])
         model_results_new = data_utils.sanitize_dict_values(model_results_new)
+    else:
+        agent_results_new = agent_results_all
+        model_results_new = model_results_all
 
     # Create DataFrames from the results
     agent_df = pd.DataFrame(agent_results_new)
