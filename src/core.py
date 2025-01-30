@@ -235,13 +235,16 @@ def run_sims_online(params:Union[Dict, List[Dict]],
     params_list = sanitize_params(params)
     agent_results_all = []
     model_results_all = []
+    chat_results_all = []
+    usage_summaries_all = []
+    graphs = {}
     simulation_id =  params_list[0]['simulation_id']
     for params in params_list:
         set_random_seed(params['seed'])
         # We keep secrets separate from the rest of the params as we don't want
         # to expose them in the results
         args = {**params, **secrets}
-        _model, agent_results, model_results = run_simulation(args)
+        model, agent_results, model_results = run_simulation(args)
         # Add columns to identify the simulation id, run, and run id
         simulation_run_id = params['simulation_run_id']
         simulation_run = params["simulation_run"]
@@ -255,6 +258,11 @@ def run_sims_online(params:Union[Dict, List[Dict]],
             res['simulation_run_id'] = simulation_run_id
         agent_results_all.extend(agent_results)
         model_results_all.extend(model_results)
+        
+        # TODO: Generalize the collection of extra data. This is too brittle.
+        usage_summaries_all.append(get_autogen_usage_summary(model))
+        chat_results_all.append(get_autogen_chat_results(model, simulation_run_id))
+        graphs[simulation_run_id] = model.graph
     
     if collect_as_vectors:
         agent_results_new = {}
@@ -279,6 +287,9 @@ def run_sims_online(params:Union[Dict, List[Dict]],
     # Return a dictionary of DataFrames and objects which are JSON serializable
     data = {'agent': agent_df,
             'model': model_df,
+            "usage_summaries": usage_summaries_all,
+            "chat_results": chat_results_all,
+            "graphs": graphs,
             "params": [data_utils.filter_dict_for_json(params)
                        for params in params_list]}
     return data
