@@ -7,7 +7,7 @@ import random
 import src.utils as utils
 import src.data_utils as data_utils
 import tqdm
-from typing import Dict
+from typing import Dict, List, Union
 
 def set_random_seed(seed: int):
     """
@@ -176,3 +176,164 @@ def run_multiple_simulations(params:Dict, secrets:Dict={}) -> Dict:
             "params": [data_utils.filter_dict_for_json(params)
                        for params in params_list]}
     return data
+
+def sanitize_params(params:Union[Dict, List[Dict]]) -> List[Dict]:
+    """Sanitize the parameters for the simulations and convert to list."""
+    # If params is a dictionary, convert it into a list containing a dictionary
+    params_list = [params] if isinstance(params, dict) else params
+    # Assert that params is a list of dictionaries
+    assert all(isinstance(params, dict) for params in params_list)
+    print("Number of simulations: ", len(params_list))
+
+    # All params in params_list should have the same `simulation_id`
+    # Only their `simulation_run` and `simulation_run_id` should differ
+    simulation_id =  params_list[0]['simulation_id']
+    assert params_list[0].get('simulation_id') is not None
+    assert all(params['simulation_id'] == simulation_id
+               for params in params_list)
+    
+    # We need to create the random ids for each simulation run before
+    # we set the random seeds for the simulation runs.
+    run_ids = data_utils.create_ids(len(params_list))
+    i = 0
+    for params, run_id in zip(params_list, run_ids):
+        i += 1
+        utils.set_nested_value(params, ['simulation_run_id'], run_id)
+        utils.set_nested_value(params, ['simulation_run'], i + 1)
+    return params_list
+
+def sanitize_filepaths(filepaths, simulation_id):
+    """Sanitize the filepaths for saving the results."""
+    # Ensuer we have a filepath for saving the inputs
+    if not 'inputs' in filepaths:
+        filepaths['inputs'] = f"{simulation_id}"
+    # Make sure we at least have filepaths for saving the agent and model results
+    if not 'model_results' in filepaths:
+        filepaths['model_results'] = "model_results"
+    if not 'agent_results' in filepaths:
+        filepaths['agent_results'] = "agent_results"
+    return filepaths
+
+def run_sims_online(params:Union[Dict, List[Dict]],
+                    secrets:Dict={},
+                    collect_as_vectors:bool=False) -> Dict:
+    """Run multiple simulations and collect the results.
+    
+    Parameters:
+    params: The parameters for the simulations. Specify as a list of
+        dictionaries or a single dictionary.
+    secrets: A dictionary of secrets to be used in the simulations.
+    collect_as_vectors: Whether the collected results are dicts of vectors or
+      scalars. In the former case, we need to concatenate the vectors before we
+      can construct a dataframe from the results.
+    
+    Returns:
+    A dictionary of DataFrames and objects which are JSON serializable.
+    
+    See Agents.jl `Agents.paramscan` method for a similar API.
+    """
+    params_list = sanitize_params(params)
+    agent_results_all = []
+    model_results_all = []
+    simulation_id =  params_list[0]['simulation_id']
+    for params in params_list:
+        set_random_seed(params['seed'])
+        # We keep secrets separate from the rest of the params as we don't want
+        # to expose them in the results
+        args = {**params, **secrets}
+        _model, agent_results, model_results = run_simulation(args)
+        # Add columns to identify the simulation id, run, and run id
+        simulation_run_id = params['simulation_run_id']
+        simulation_run = params["simulation_run"]
+        for res in agent_results:
+            res['simulation_id'] = simulation_id
+            res['simulation_run'] = simulation_run
+            res['simulation_run_id'] = simulation_run_id
+        for res in model_results:
+            res['simulation_id'] = simulation_id
+            res['simulation_run'] = simulation_run
+            res['simulation_run_id'] = simulation_run_id
+        agent_results_all.extend(agent_results)
+        model_results_all.extend(model_results)
+    
+    if collect_as_vectors:
+        agent_results_new = {}
+        if agent_results_all:
+            for k in agent_results_all[0].keys():
+                agent_results_new[k] = np.hstack([d[k] for d in agent_results_all])
+        agent_results_new = data_utils.sanitize_dict_values(agent_results_new)
+        
+        model_results_new = {}
+        if model_results_all:
+            for k in model_results_all[0].keys():
+                model_results_new[k] = np.hstack([d[k] for d in model_results_all])
+        model_results_new = data_utils.sanitize_dict_values(model_results_new)
+
+    # Create DataFrames from the results
+    agent_df = pd.DataFrame(agent_results_new)
+    model_df = pd.DataFrame(model_results_new)
+    
+    # Return a dictionary of DataFrames and objects which are JSON serializable
+    data = {'agent': agent_df,
+            'model': model_df,
+            "params": [data_utils.filter_dict_for_json(params)
+                       for params in params_list]}
+    return data
+
+def run_sims_offline(params:Union[Dict, List[Dict]],
+                     secrets:Dict,
+                     filepaths:Dict) -> Dict:
+    """Run multiple simulations, assuming the model saves results to disk.
+    
+    Parameters:
+    params: The parameters for the simulations. Specify as a list of
+        dictionaries or a single dictionary.
+    secrets: A dictionary of secrets to be used in the simulations.
+        We keep secrets separate from the rest of the params as we don't want
+        to expose them in the results
+    filepaths: A dictionary of filepaths to save data to.
+    
+    Returns:
+    
+    See Agents.jl `Agents.paramscan` method for a similar API.
+    """
+    params_list = sanitize_params(params)
+    simulation_id = params_list[0]['simulation_id']
+    filepaths = sanitize_filepaths(filepaths, simulation_id)
+    data_utils.save_inputs(filepaths['inputs'], params_list)
+    for params in params_list:
+        set_random_seed(params['seed'])
+        args = {**params, **secrets, "filepaths": filepaths}
+        run_simulation(args)
+    return filepaths
+
+def paramscan(params:Union[Dict, List[Dict]],
+              secrets:Dict={},
+              filepaths:Dict={},
+              collect_as_vectors:bool=False) -> Dict:
+    """Run multiple simulations and collect the results.
+    
+    Parameters:
+    params: The parameters for the simulations. Specify as a list of
+        dictionaries or a single dictionary.
+    secrets: A dictionary of secrets to be used in the simulations.
+    filepaths: A dictionary of filepaths to save data to.
+    collect_as_vectors: Whether the collected results are dicts of vectors or
+      scalars. In the former case, we need to concatenate the vectors before we
+      can construct a dataframe from the results.
+    
+    Returns:
+    Either
+      - A dictionary of DataFrames and objects which are JSON serializable.
+      - A dictionary of filepaths where the results are saved.
+    
+    See Agents.jl `Agents.paramscan` method for a similar API.
+    """
+    if not filepaths:
+        data = run_sims_online(params, secrets, collect_as_vectors)
+        return data
+    else:
+        # If filepaths is nonempty, assume results data is
+        # automatically saved to disk as the model runs.
+        filepaths = run_sims_offline(params, secrets, filepaths)
+        return filepaths
