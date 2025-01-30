@@ -61,6 +61,22 @@ def create_id(path_to_data='/usr/share/dict/words', verbose=True):
             print(f"Sim ID: {sim_id}")
         return sim_id
 
+def create_ids(num_ids):
+    """
+    Generate a given number of unique identifiers (UUIDs).
+
+    Parameters:
+    - num_ids: The number of unique identifiers to generate.
+
+    Returns:
+    - A list of unique identifier strings.
+    
+    Notes:
+    - Use this function to efficiently generate multiple unique identifiers
+      at once (and when you don't care about the ids being human-readable).
+    """
+    return [str(uuid.uuid4()) for _ in range(num_ids)]
+
 def get_current_git_commit():
     try:
         commit = subprocess.check_output(["git", "rev-parse", "HEAD"]).strip().decode('utf-8')
@@ -240,6 +256,41 @@ def save_data(data, data_dir=None):
         elif isinstance(value, (dict, list)):
             with open(os.path.join(data_dir, f'{key}.json'), 'w') as f:
                 json.dump(value, f)
+
+def save_chunk(filepaths, chunk, filepath_key):
+    """Save a single chunk of data to an HDF5 file, appending if the file exists."""
+    filepath = os.path.join(filepaths['data_dir'], 
+                            filepaths.get(filepath_key, filepath_key))
+    filepath = f"{filepath}.hdf5"
+    
+    # Ensure the directory exists
+    os.makedirs(os.path.dirname(filepath), exist_ok=True)
+    
+    chunk_df = pd.DataFrame(chunk)
+    
+    with h5py.File(filepath, 'a') as f:
+        for column in chunk_df.columns:
+            data = chunk_df[column].values
+            if column in f:
+                # Append data to the existing dataset
+                dataset = f[column]
+                dataset.resize((dataset.shape[0] + data.shape[0]), axis=0)
+                dataset[-data.shape[0]:] = data
+            else:
+                maxshape = (None,)
+                f.create_dataset(column,
+                                 data=data,
+                                 maxshape=maxshape, chunks=True)
+    
+    print(f"Saved chunk to {filepath}")
+
+def save_inputs(filename, inputs, data_dir='data'):
+    """Save the inputs to filepath if no such file exists."""
+    inputs_dir = os.path.join(data_dir, 'inputs')
+    filepath = os.path.join(inputs_dir, f'{filename}.json')
+    inputs = [filter_dict_for_json(d) for d in inputs]
+    if not os.path.exists(filepath):
+        save_data({filename: inputs}, data_dir=inputs_dir)
 
 def save_sim_to_tracker(data_dir: str, sim_id: str, batch_id: Union[str, None] = None):
     """
