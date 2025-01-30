@@ -13,7 +13,7 @@ import pprint
 import random
 import regex
 import subprocess
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Union
 import uuid
 import logging
 
@@ -240,6 +240,43 @@ def save_data(data, data_dir=None):
         elif isinstance(value, (dict, list)):
             with open(os.path.join(data_dir, f'{key}.json'), 'w') as f:
                 json.dump(value, f)
+
+def save_sim_to_tracker(data_dir: str, sim_id: str, batch_id: Union[str, None] = None):
+    """
+    Save simulation metadata to the tracker file.
+
+    Args:
+        data_dir (str): The directory where the tracker file is located.
+        sim_id (str): The simulation ID.
+        batch_id (str, optional): The batch ID. Defaults to None.
+    """
+    # Define the path to the simulation tracker file
+    sim_tracker_path = os.path.join(data_dir, "sim_tracker.csv")
+
+    # Ensure the directory exists
+    os.makedirs(data_dir, exist_ok=True)
+
+    # Check if the simulation tracker file exists
+    file_exists = os.path.isfile(sim_tracker_path)
+
+    # Create a DataFrame with the simulation metadata
+    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    sim_metadata = pd.DataFrame({
+        "sim_id": [sim_id],
+        "batch_id": [batch_id],
+        "timestamp": [timestamp]
+    })
+
+    # Append the simulation metadata to the tracker file, creating the file if it doesn't exist
+    try:
+        if file_exists:
+            sim_metadata.to_csv(sim_tracker_path, mode='a', header=False, index=False)
+        else:
+            print("Creating a new simulation tracker file.")
+            sim_metadata.to_csv(sim_tracker_path, mode='w', header=True, index=False)
+        print(f"Simulation ID {sim_id} has been added to the tracker.")
+    except Exception as e:
+        print(f"An error occurred while updating the simulation tracker: {e}")
 
 def save_plots(plots, plots_dir=None):
     """
