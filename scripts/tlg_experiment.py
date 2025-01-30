@@ -27,6 +27,9 @@ current_commit = src.data_utils.get_current_git_commit()
 data_dir = f"data/{simulation_id}"
 plots_dir = f"plots/{simulation_id}"
 
+# Save sim to tracker
+src.data_utils.save_sim_to_tracker("data", simulation_id)
+
 # Setup logging
 src.data_utils.setup_logging()
 
