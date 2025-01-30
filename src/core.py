@@ -183,7 +183,7 @@ def sanitize_params(params:Union[Dict, List[Dict]]) -> List[Dict]:
     params_list = [params] if isinstance(params, dict) else params
     # Assert that params is a list of dictionaries
     assert all(isinstance(params, dict) for params in params_list)
-    print("Number of simulations: ", len(params_list))
+    logging.info("Number of simulations: ", len(params_list))
 
     # All params in params_list should have the same `simulation_id`
     # Only their `simulation_run` and `simulation_run_id` should differ
