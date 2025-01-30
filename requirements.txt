@@ -4,5 +4,6 @@ numpy
 pandas
 plotly
 pyautogen
+pytest
 python-dotenv
 regex
