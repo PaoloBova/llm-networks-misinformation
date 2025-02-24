@@ -571,3 +571,134 @@ def setup_project(save_tracker=True):
     # Setup logging
     setup_logging()
     return simulation_id, current_commit, data_dir, plots_dir
+
+import os
+import pandas as pd
+import json
+import logging
+
+def load_simulation_results(sim_tracker_csv,
+                            filenames,
+                            data_dir='data',
+                            min_timestamp=None,
+                            merge=True,
+                            parser_map=None,
+                            handle_non_tabular='list'):
+    """
+    Load and merge simulation result files from multiple simulation directories with improved robustness and flexibility.
+
+    This function reads a simulation tracker CSV file containing simulation IDs and their timestamps,
+    filters the simulations based on an optional minimum timestamp, and then for each specified filename,
+    it searches for the corresponding file in each simulation directory. The function supports CSV and JSON files
+    by default, but additional parsers can be supplied via the parser_map parameter.
+
+    For CSV files, a Pandas DataFrame is created directly. For JSON files, the function will try to load the data
+    as a standard JSON list or as NDJSON (newline-delimited JSON). If the JSON data is a list of dictionaries,
+    it is converted to a DataFrame; otherwise, it is returned in its native Python data structure.
+
+    A 'sim_id' column is added to any DataFrame to indicate the originating simulation. Multiple results for a given
+    filename across simulations are merged into a single DataFrame if merge is True. If merge is False, a list of objects
+    (DataFrames or Python-native parsed objects) is returned for that filename.
+
+    Parameters:
+        sim_tracker_csv (str): Path to the simulation tracker CSV file.
+        filenames (list of str): List of filenames to search for in each simulation directory.
+        data_dir (str): Root directory where simulation subdirectories are located. Default is 'data'.
+        min_timestamp (str or pandas.Timestamp, optional): Minimum timestamp to filter simulations.
+            Simulations with a timestamp prior to this are ignored.
+        merge (bool): Whether to merge the results for each filename into a single DataFrame.
+                      If False, returns a list of objects for each filename. Defaults to True.
+        parser_map (dict, optional): A dictionary mapping file extensions (e.g. '.csv', '.json') to custom
+                                     parser functions. Each parser function should accept a file path and return a
+                                     tuple (result, is_tabular) where result is the parsed object and is_tabular is
+                                     a boolean indicating if the result can be converted to a DataFrame.
+        handle_non_tabular (str): How to handle non-tabular JSON results. Options are:
+                                  'list' (default): return a list of simulation records with keys 'sim_id' and 'data';
+                                  'skip': skip such records.
+
+    Returns:
+        dict: A dictionary mapping each filename (str) to the merged Pandas DataFrame if merge is True and
+              results are tabular, or to a list of simulation records (either DataFrames or Python objects)
+              if merge is False or if a file's contents are non-tabular and handle_non_tabular is 'list'.
+    """
+    # Default parsers for CSV and JSON if not provided via parser_map.
+    def parse_csv(file_path):
+        return pd.read_csv(file_path), True
+
+    def parse_json(file_path):
+        with open(file_path, 'r') as f:
+            first_char = f.read(1)
+            f.seek(0)
+            if first_char == '[':
+                data = json.load(f)
+            else:
+                data = [json.loads(line) for line in f if line.strip()]
+        # Check if data is tabular (list of dictionaries)
+        if isinstance(data, list) and data and all(isinstance(item, dict) for item in data):
+            return pd.DataFrame(data), True
+        else:
+            return data, False
+
+    default_parser_map = {
+        '.csv': parse_csv,
+        '.json': parse_json,
+    }
+
+    if parser_map is None:
+        parser_map = default_parser_map
+    else:
+        # Merge custom parser_map with defaults; custom entries will override defaults.
+        default_parser_map.update(parser_map)
+        parser_map = default_parser_map
+
+    # Read the simulation tracker CSV and parse the timestamp column.
+    tracker_df = pd.read_csv(sim_tracker_csv, parse_dates=['timestamp'])
+    
+    if min_timestamp is not None:
+        tracker_df = tracker_df[tracker_df['timestamp'] >= pd.Timestamp(min_timestamp)]
+    
+    merged_results = {}
+
+    # Iterate over each filename.
+    for fname in filenames:
+        file_ext = os.path.splitext(fname)[-1].lower()
+        if file_ext not in parser_map:
+            logging.warning(f"No parser available for file extension '{file_ext}' in {fname}. Skipping.")
+            continue
+
+        results_list = []  # Will store parsed results for each simulation.
+
+        # Iterate over each simulation.
+        for sim_id in tracker_df['sim_id']:
+            sim_folder = os.path.join(data_dir, sim_id)
+            file_path = os.path.join(sim_folder, fname)
+            
+            if not os.path.isfile(file_path):
+                logging.info(f"File {file_path} not found for simulation {sim_id}")
+                continue
+
+            try:
+                parsed_obj, is_tabular = parser_map[file_ext](file_path)
+                if is_tabular:
+                    # Ensure we have a DataFrame and add sim_id.
+                    if not isinstance(parsed_obj, pd.DataFrame):
+                        parsed_obj = pd.DataFrame(parsed_obj)
+                    parsed_obj['sim_id'] = sim_id
+                    results_list.append(parsed_obj)
+                else:
+                    if handle_non_tabular == 'skip':
+                        logging.info(f"Non-tabular data in file {file_path} skipped for simulation {sim_id}")
+                    else:
+                        results_list.append({'sim_id': sim_id, 'data': parsed_obj})
+            except Exception as e:
+                logging.error(f"Error processing file {file_path} for simulation {sim_id}: {e}")
+                continue
+
+        if results_list:
+            # Determine if merging is appropriate.
+            if merge and all(isinstance(item, pd.DataFrame) for item in results_list):
+                merged_results[fname] = pd.concat(results_list, ignore_index=True)
+            else:
+                merged_results[fname] = results_list
+
+    return merged_results
