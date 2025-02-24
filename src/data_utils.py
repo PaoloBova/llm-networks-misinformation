@@ -1,3 +1,5 @@
+import autogen
+import collections
 import datetime
 import hashlib
 import json
@@ -489,3 +491,45 @@ def sanitize_dict_values(results_dict):
         results_dict[key] = value
 
     return results_dict
+
+def get_autogen_chat_results(model, simulation_run_id):
+    """Get the autogen chat results from the model and ensure they are in a JSON
+    serializable format."""
+    chat_results = {agent.name: agent.chat_messages
+                    for agent in model.agents}
+    
+    # Chat messages are not JSON serializable, so build JSON serializable dicts
+    # from them as follows:
+    
+    # TODO: Chat messages lack data on who sent each message. This makes it very
+    # difficult to track who is who in the conversation. This should be fixed.
+    
+    chat_results = collections.defaultdict(list)
+    for agent in model.agents:
+        agent_key = str(agent.name)
+        chat_messages = agent.chat_messages
+        for peer_agent, chat in chat_messages.items():
+            chat_id = f"agent1:{agent_key}_agent2:{str(peer_agent.name)}_sim:{simulation_run_id}"
+            chat_results[chat_id].append(chat)
+    return chat_results
+
+def get_autogen_usage_summary(model):
+    """Get the autogen usage summary from the model."""
+    usage_summary = autogen.gather_usage_summary(model.agents)
+    return usage_summary
+
+def get_chat_data(args):
+    model = args.get('model', None)
+    simulation_run_id = args.get('simulation_run_id', None)
+    if model:
+        data = {"usage_summaries": get_autogen_usage_summary(model),
+                "chat_results": get_autogen_chat_results(model, simulation_run_id)}
+        return data
+
+def get_graph_data(args):
+    model = args.get('model', None)
+    if model:
+        return {"graphs": model.graph}
+
+def get_llm_network_data(args):
+    return {**get_chat_data(args), **get_graph_data(args)}

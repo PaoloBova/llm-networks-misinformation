@@ -1,4 +1,3 @@
-import autogen
 import collections
 import logging
 import numpy as np
@@ -7,7 +6,7 @@ import random
 import src.utils as utils
 import src.data_utils as data_utils
 import tqdm
-from typing import Dict, List, Union
+from typing import Dict, List, Union, Optional, Callable, Any
 
 def set_random_seed(seed: int):
     """
@@ -80,38 +79,16 @@ def run_simulation(params):
     agent_results, model_results = run(model, params)
     return model, agent_results, model_results
 
-def get_autogen_chat_results(model, simulation_run_id):
-    """Get the autogen chat results from the model and ensure they are in a JSON
-    serializable format."""
-    chat_results = {agent.name: agent.chat_messages
-                    for agent in model.agents}
-    
-    # Chat messages are not JSON serializable, so build JSON serializable dicts
-    # from them as follows:
-    
-    # TODO: Chat messages lack data on who sent each message. This makes it very
-    # difficult to track who is who in the conversation. This should be fixed.
-    
-    chat_results = collections.defaultdict(list)
-    for agent in model.agents:
-        agent_key = str(agent.name)
-        chat_messages = agent.chat_messages
-        for peer_agent, chat in chat_messages.items():
-            chat_id = f"agent1:{agent_key}_agent2:{str(peer_agent.name)}_sim:{simulation_run_id}"
-            chat_results[chat_id].append(chat)
-    return chat_results
-
-def get_autogen_usage_summary(model):
-    """Get the autogen usage summary from the model."""
-    usage_summary = autogen.gather_usage_summary(model.agents)
-    return usage_summary
-
-def run_multiple_simulations(params:Dict, secrets:Dict={}) -> Dict:
+def run_multiple_simulations(params:Dict,
+                             secrets:Dict={},
+                             custom_collect_fn: Optional[Callable[[dict], dict]] = None) -> Dict:
     """Run multiple simulations and collect the results.
     
     Parameters:
     params: The parameters for the simulations.
     secrets: A dictionary of secrets to be used in the simulations.
+    custom_collect_fn: A custom function to collect additional results.
+        Returns a dict of: result_type_string -> value
     
     Returns:
     A dictionary of DataFrames and objects which are JSON serializable.
@@ -126,9 +103,10 @@ def run_multiple_simulations(params:Dict, secrets:Dict={}) -> Dict:
 
     agent_results_all = []
     model_results_all = []
-    chat_results_all = []
-    usage_summaries_all = []
-    graphs = {}
+    # Create a nested (two-layer) default dictionary for storing results of any type.
+    # This dictionary maps keys (e.g., result types) to inner dictionaries
+    # which map simulation_run_ids to values.
+    custom_data: Dict[str, Dict[str, Any]] = collections.defaultdict(dict)
     # All params in params_list should have the same `simulation_id`
     # Only their `simulation_run` and `simulation_run_id` should differ
     simulation_id =  params_list[0]['simulation_id']
@@ -158,21 +136,20 @@ def run_multiple_simulations(params:Dict, secrets:Dict={}) -> Dict:
             res['simulation_run_id'] = simulation_run_id
         agent_results_all.extend(agent_results)
         model_results_all.extend(model_results)
-        usage_summaries_all.append(get_autogen_usage_summary(model))
-        chat_results_all.append(get_autogen_chat_results(model, simulation_run_id))
-        graphs[simulation_run_id] = model.graph
+        
+        if custom_collect_fn:
+            custom_result = custom_collect_fn({**args, "model": model})
+            for k, v in custom_result.items():
+                custom_data[k][simulation_run_id] = v
     
     # Create DataFrames from the results
     agent_df = pd.DataFrame(agent_results_all)
     model_df = pd.DataFrame(model_results_all)
-    chat_data = {"usage_summaries": usage_summaries_all,
-                 "chat_results": chat_results_all}
     
     # Return a dictionary of DataFrames and objects which are JSON serializable
     data = {'agent': agent_df,
             'model': model_df,
-            **chat_data,
-            "graphs": graphs,
+            **custom_data,
             "params": [data_utils.filter_dict_for_json(params)
                        for params in params_list]}
     return data
@@ -216,6 +193,7 @@ def sanitize_filepaths(filepaths, simulation_id):
 
 def run_sims_online(params:Union[Dict, List[Dict]],
                     secrets:Dict={},
+                    custom_collect_fn: Optional[Callable[[dict], dict]] = None,
                     collect_as_vectors:bool=False) -> Dict:
     """Run multiple simulations and collect the results.
     
@@ -223,6 +201,10 @@ def run_sims_online(params:Union[Dict, List[Dict]],
     params: The parameters for the simulations. Specify as a list of
         dictionaries or a single dictionary.
     secrets: A dictionary of secrets to be used in the simulations.
+        We keep secrets separate from the rest of the params as we don't want
+        to expose them in the results
+    custom_collect_fn: A custom function to collect additional results.
+        Returns a dict of: result_type_string -> value
     collect_as_vectors: Whether the collected results are dicts of vectors or
       scalars. In the former case, we need to concatenate the vectors before we
       can construct a dataframe from the results.
@@ -235,14 +217,13 @@ def run_sims_online(params:Union[Dict, List[Dict]],
     params_list = sanitize_params(params)
     agent_results_all = []
     model_results_all = []
-    chat_results_all = []
-    usage_summaries_all = []
-    graphs = {}
+    # Create a nested (two-layer) default dictionary for storing results of any type.
+    # This dictionary maps keys (e.g., result types) to inner dictionaries
+    # which map simulation_run_ids to values.
+    custom_data: Dict[str, Dict[str, Any]] = collections.defaultdict(dict)
     simulation_id =  params_list[0]['simulation_id']
     for params in params_list:
         set_random_seed(params['seed'])
-        # We keep secrets separate from the rest of the params as we don't want
-        # to expose them in the results
         args = {**params, **secrets}
         model, agent_results, model_results = run_simulation(args)
         # Add columns to identify the simulation id, run, and run id
@@ -258,12 +239,11 @@ def run_sims_online(params:Union[Dict, List[Dict]],
             res['simulation_run_id'] = simulation_run_id
         agent_results_all.extend(agent_results)
         model_results_all.extend(model_results)
-        
-        # TODO: Generalize the collection of extra data. This is too brittle.
-        usage_summaries_all.append(get_autogen_usage_summary(model))
-        chat_results_all.append(get_autogen_chat_results(model, simulation_run_id))
-        graphs[simulation_run_id] = model.graph
-    
+        if custom_collect_fn:
+            custom_result = custom_collect_fn({**args, "model": model})
+            for k, v in custom_result.items():
+                custom_data[k][simulation_run_id] = v
+
     if collect_as_vectors:
         agent_results_new = {}
         if agent_results_all:
@@ -287,9 +267,7 @@ def run_sims_online(params:Union[Dict, List[Dict]],
     # Return a dictionary of DataFrames and objects which are JSON serializable
     data = {'agent': agent_df,
             'model': model_df,
-            "usage_summaries": usage_summaries_all,
-            "chat_results": chat_results_all,
-            "graphs": graphs,
+            **custom_data,
             "params": [data_utils.filter_dict_for_json(params)
                        for params in params_list]}
     return data
