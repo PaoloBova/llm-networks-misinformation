@@ -19,7 +19,10 @@ from typing import Any, Dict, List, Union
 import uuid
 import logging
 
-def setup_logging(log_file='chat_logs.log', level=logging.INFO):
+def setup_logging(log_file='chat_logs.log', level=logging.INFO, log_dir='logs'):
+    # Make sure log directory exists
+    os.makedirs(log_dir, exist_ok=True)
+    log_file = os.path.join(log_dir, log_file)
     logging.basicConfig(filename=log_file, level=level,
                         format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -533,3 +536,38 @@ def get_graph_data(args):
 
 def get_llm_network_data(args):
     return {**get_chat_data(args), **get_graph_data(args)}
+
+def setup_project(save_tracker=True):
+    """Set up the project by creating ids and directories.
+    
+    Returns:
+    - simulation_id: A unique identifier for the simulation.
+    - current_commit: The current git commit hash.
+    - data_dir: The directory to save the simulation data in.
+    - plots_dir: The directory to save the plots in.
+    
+    Usage:
+    ```{python}
+    simulation_id, current_commit, data_dir, plots_dir = setup_project()
+    ```
+    
+    This function should be called at the beginning of a script to set up the
+    project directories and logging.
+    
+    The simulation_id and current_commit can be used to uniquely identify the
+    simulation and the version of the code used."""
+    # Simulation metadata
+    simulation_id = create_id()
+    current_commit = get_current_git_commit()
+
+    # Directories
+    data_dir = f"data/{simulation_id}"
+    plots_dir = f"plots/{simulation_id}"
+
+    # Save sim to tracker
+    if save_tracker:
+        save_sim_to_tracker("data", simulation_id)
+
+    # Setup logging
+    setup_logging()
+    return simulation_id, current_commit, data_dir, plots_dir
