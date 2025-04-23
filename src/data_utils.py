@@ -434,20 +434,23 @@ def extract_data(message: str, data_format: Dict[str, type]) -> List[Dict[str, A
         try:
             new_data = json.loads(match)
         except json.JSONDecodeError:
-            print("Could not parse a JSON string.")
+            logging.info(f"Could not parse a JSON string from {match}.")
             continue
 
         # Validate the keys in the dictionary.
         expected_keys = set(data_format.keys())
         if set(new_data.keys()) != expected_keys:
-            print("Received unexpected keys.")
+            logging.info(f"Received unexpected keys: {set(new_data.keys())} \
+                           Expected keys: {expected_keys}")
             continue
 
         # Validate the types of the values in the dictionary.
         valid_data = True
         for key, expected_type in data_format.items():
             if not isinstance(new_data[key], expected_type):
-                print(f"Received data with incorrect type for key '{key}'.")
+                logging.info(f"Received data with incorrect type for key '{key}'. \
+                               Expected type: {expected_type}, \
+                               Received type: {type(new_data[key])}")
                 valid_data = False
                 break
 
