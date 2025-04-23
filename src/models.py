@@ -243,6 +243,7 @@ class TechnologyLearningGame:
         # Extract data from the chat message and update the agent's knowledge.
         data_format = agent.knowledge_format if hasattr(agent, "knowledge_format") else {}
         message = chat_result.chat_history[-1]["content"]
+        logging.info(f"Chat result: {chat_result}")
         logging.info(f"Agent {agent.name} received message: {message}")
         data = data_utils.extract_data(message, data_format)
         if len(data) >= 1:
